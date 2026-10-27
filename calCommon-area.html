@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตารางคำนวณโหลดส่วนกลาง</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for Thai Language -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* ===== Design tokens (ชุดเดียวกับ index / condo-page-1 / condo-page-2) ===== */
+        :root {
+            --primary-navy: #0F2027;
+            --secondary-navy: #203A43;
+            --accent-orange: #FF6B35;
+            --hover-orange: #E85A24;
+            --bg-light: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2C3E50;
+            --text-light: #6C7A89;
+            --table-line: #1f2937;
+            --table-head: #F8FAFC;
+            --field-bg: #F1F5F9;
+            --field-hover: #CBD5E0;
+            --danger-red: #C53030;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Prompt', 'Sarabun', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* ===== ส่วนหัว ===== */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-navy), var(--secondary-navy));
+            color: #fff;
+            padding: 1.4rem 1.25rem;
+            border-bottom: 4px solid var(--accent-orange);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .page-header-inner {
+            max-width: 1700px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .page-header h1 {
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 600;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+        }
+
+        .page-header h1 > i { color: var(--accent-orange); }
+
+        .phase-chip {
+            background: var(--accent-orange);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 0.15rem 0.7rem;
+            border-radius: 999px;
+        }
+
+        #roomInfo {
+            margin-top: 0.35rem;
+            font-size: 0.9rem;
+            font-weight: 300;
+            color: #CBD5E1;
+        }
+
+        #roomInfo strong { color: #fff; font-weight: 500; }
+
+        .restore-note {
+            margin-top: 0.25rem;
+            font-size: 0.8rem;
+            color: #FFD2BF;
+        }
+
+        .header-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+        }
+
+        .hbtn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.1rem;
+            border-radius: 8px;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .hbtn-primary { background: var(--accent-orange); color: #fff; }
+        .hbtn-primary:hover { background: var(--hover-orange); }
+
+        .hbtn-ghost { background: transparent; color: #fff; border-color: rgba(255, 255, 255, 0.45); }
+        .hbtn-ghost:hover { background: rgba(255, 255, 255, 0.1); border-color: #fff; }
+
+        .hbtn:focus-visible,
+        .row-btn:focus-visible {
+            outline: 3px solid var(--accent-orange);
+            outline-offset: 2px;
+        }
+
+        /* ===== เนื้อหา ===== */
+        .page-main {
+            flex: 1;
+            width: 100%;
+            max-width: 1700px;
+            margin: 1.5rem auto;
+            padding: 0 1rem;
+        }
+
+        .sheet-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px solid #EEF2F6;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+        }
+
+        .section-header-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--secondary-navy);
+        }
+
+        .section-header-title i { color: var(--accent-orange); }
+
+        /* ตาราง 2 ฝั่งวางคู่กันเมื่อจอกว้างพอ ถ้าไม่พอจะเรียงลงมา */
+        .tables-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            align-items: flex-start;
+        }
+
+        /* เลื่อนแนวนอนเฉพาะในกรอบตาราง ไม่ใช่ทั้งหน้า */
+        .table-block {
+            max-width: 100%;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+
+        .summary-block {
+            margin-top: 2rem;
+            width: fit-content;        /* หัวข้ออยู่กึ่งกลางตารางของตัวเอง */
+        }
+
+        /* ===== ตาราง: กว้างตามเนื้อหา (ไม่ fix ความกว้างคอลัมน์) ===== */
+        .sheet-table {
+            border-collapse: collapse;
+            width: auto;
+            table-layout: auto;
+            background-color: #fff;
+            text-transform: uppercase;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .sheet-table th,
+        .sheet-table td {
+            border: 1px solid var(--table-line);
+            padding: 4px 8px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.9rem;
+            white-space: nowrap;      /* ไม่ตัดบรรทัด แถวซ้าย-ขวาจึงสูงเท่ากัน */
+        }
+
+        .sheet-table thead th,
+        .sheet-table thead td {
+            background-color: var(--table-head);
+            font-weight: 600;
+            height: 34px;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .sheet-table tbody td { height: 44px; }
+
+        .sheet-table .num-cell {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            min-width: 64px;
+            padding-right: 12px;
+        }
+
+        .sheet-table .total-head { padding: 4px 16px; }
+
+        #totalVaSum {
+            font-weight: 600;
+            color: var(--primary-navy);
+        }
+
+        /* ===== ช่องกรอกในตาราง ===== */
+        .cell-input,
+        .cell-select {
+            border: 1px solid transparent;
+            outline: none;
+            background-color: var(--field-bg);
+            color: var(--text-dark);
+            font-family: inherit;
+            font-size: 0.9rem;
+            padding: 4px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+        }
+
+        .cell-input {
+            display: inline-block;
+            min-width: 3ch;
+            text-align: center;
+        }
+
+        .cell-input[type="number"] {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            -moz-appearance: textfield;
+            appearance: textfield;
+        }
+
+        .cell-input::-webkit-outer-spin-button,
+        .cell-input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            appearance: none;
+            margin: 0;
+        }
+
+        .cell-input:hover:not(:disabled),
+        .cell-select:hover:not(:disabled) {
+            border-color: var(--field-hover);
+        }
+
+        .cell-input:focus,
+        .cell-select:focus {
+            background-color: #fff;
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+        }
+
+        .cell-input:disabled,
+        .cell-select:disabled {
+            background-color: #E2E8F0;
+            color: var(--text-light);
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .cell-select {
+            width: auto;               /* กว้างตามตัวเลือกที่ยาวที่สุด */
+            cursor: pointer;
+            -webkit-appearance: none;
+            appearance: none;
+            text-align: left;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236C7A89' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 12px;
+            padding-right: 26px;
+        }
+
+        .cell-select-pill {
+            border-radius: 999px;
+            padding-left: 12px;
+        }
+
+        /* DESCRIPTION ที่ผู้ใช้พิมพ์เอง */
+        .cell-input.custom-desc {
+            text-align: left;
+            background-color: #fff;
+            border-color: var(--field-hover);
+            border-bottom: 2px solid var(--accent-orange);
+            font-weight: 500;
+        }
+
+        /* ===== ปุ่มเพิ่ม/ลบแถว (คอลัมน์นอกตาราง) ===== */
+        .sheet-table td.action-cell,
+        .sheet-table th.action-cell {
+            border: none !important;
+            background: transparent !important;
+        }
+
+        .row-actions {
+            display: flex;
+            gap: 0.35rem;
+            padding-left: 0.25rem;
+        }
+
+        .row-btn {
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.3rem 0.65rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .row-btn.add {
+            background: var(--secondary-navy);
+            color: #fff;
+            border: 1px solid var(--secondary-navy);
+        }
+
+        .row-btn.add:hover {
+            background: var(--accent-orange);
+            border-color: var(--accent-orange);
+        }
+
+        .row-btn.del {
+            background: #fff;
+            color: var(--danger-red);
+            border: 1px solid #FEB2B2;
+        }
+
+        .row-btn.del:hover { background: #FFF5F5; }
+
+        /* ===== ตาราง LOAD (VA) แยกเฟส A / B / C ===== */
+        .sheet-table td.ph-cell { padding: 0; }
+
+        .ph-btn {
+            display: block;
+            width: 100%;
+            min-width: 76px;
+            height: 43px;              /* + เส้นขอบ = ความสูงแถว 44px เท่าตารางซ้าย/ขวา */
+            padding: 0 12px;
+            border: none;
+            background: transparent;
+            font-family: 'Sarabun', sans-serif;
+            font-size: 0.9rem;
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+            color: var(--text-dark);
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.15s;
+        }
+
+        .ph-btn:hover:not(:disabled) { background: var(--field-bg); }
+
+        .ph-btn:focus-visible {
+            outline: 3px solid var(--accent-orange);
+            outline-offset: -3px;
+        }
+
+        .ph-btn.assigned {
+            background: #FFF1EB;
+            font-weight: 600;
+            color: var(--primary-navy);
+        }
+
+        .ph-btn.three-phase { background: #EEF2F6; }
+
+        .ph-btn:disabled { cursor: default; }
+
+        /* จุดสีส้ม = ผู้ใช้เลือกเฟสเอง */
+        .ph-btn.manual::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 7px;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+        }
+
+        .phase-help {
+            margin-top: 0.5rem;
+            font-size: 0.78rem;
+            color: var(--text-light);
+            line-height: 1.6;
+            /* ไม่ให้ข้อความดันกรอบให้กว้างกว่าตาราง (ตัดบรรทัดตามความกว้างตาราง) */
+            width: 0;
+            min-width: 100%;
+        }
+
+        .phase-help .dot {
+            display: inline-block;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--accent-orange);
+            margin-right: 3px;
+            vertical-align: middle;
+        }
+
+        .btn-auto-phase {
+            margin-top: 0.5rem;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 0.35rem 0.75rem;
+            border-radius: 6px;
+            border: 1px solid var(--secondary-navy);
+            background: #fff;
+            color: var(--secondary-navy);
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-auto-phase:hover { background: var(--secondary-navy); color: #fff; }
+        .btn-auto-phase:focus-visible { outline: 3px solid var(--accent-orange); outline-offset: 2px; }
+
+        .phase-total { font-weight: 600; color: var(--primary-navy); }
+
+        /* ===== เลขวงจรฝั่งคี่ / คู่ ===== */
+        .sheet-table td.circuit-num {
+            font-weight: 600;
+            color: var(--primary-navy);
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* เส้นคั่นระหว่างฝั่งเลขคี่กับฝั่งเลขคู่ (ทั้ง 3 ตาราง) */
+        .sheet-table tr.group-start > td:not(.action-cell) {
+            border-top: 3px solid var(--secondary-navy);
+        }
+
+        .sheet-table td.ph-val { min-width: 76px; }
+        /* ช่องตัวเลข VA แต่ละเฟสเป็นพื้นขาว (สีเฟสอยู่ที่หัวคอลัมน์ A / B / C เท่านั้น) */
+        .sheet-table td.ph-val.assigned { font-weight: 600; color: var(--primary-navy); }
+
+        .add-group-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.9rem;
+        }
+
+        .add-group-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 0.45rem 0.9rem;
+            border-radius: 8px;
+            border: 1px solid var(--secondary-navy);
+            background: var(--secondary-navy);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .add-group-btn:hover { background: var(--accent-orange); border-color: var(--accent-orange); }
+        .add-group-btn:focus-visible { outline: 3px solid var(--accent-orange); outline-offset: 2px; }
+
+        .add-group-btn .next-label {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 999px;
+            padding: 0 0.5rem;
+            font-size: 0.78rem;
+        }
+
+        .add-group-help { font-size: 0.78rem; color: var(--text-light); }
+
+
+        /* หน้า 3 เฟสมีตาราง 3 ชุดวางคู่กัน ให้ใช้ความกว้างจอได้เต็มที่ */
+        .page-main,
+        .page-header-inner { max-width: 2200px; }
+        /* ตาราง 3 ชุดอยู่แถวเดียวเสมอ ไม่ว่าจะกี่วงจร
+           ถ้าจอแคบกว่าตาราง ให้เลื่อนซ้าย-ขวาในกรอบนี้ (ทั้งหน้าไม่เลื่อน) */
+        .tables-row {
+            gap: 1rem;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 6px;
+        }
+
+        .tables-row > .table-block {
+            flex: 0 0 auto;            /* ไม่ย่อ ไม่ตกบรรทัด */
+            max-width: none;
+            overflow: visible;
+        }
+
+        /* ===== แจ้งบันทึกสำเร็จ ===== */
+        .save-toast {
+            position: fixed;
+            right: 1.25rem;
+            bottom: 1.25rem;
+            z-index: 50;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: var(--secondary-navy);
+            color: #fff;
+            padding: 0.8rem 1.1rem;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-orange);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            font-size: 0.9rem;
+        }
+
+        .save-toast[hidden] { display: none; }
+        .save-toast i { color: #9AE6B4; }
+        .save-toast a { color: #FFD2BF; font-weight: 500; }
+
+        /* ===== ส่วนท้าย ===== */
+        .page-footer {
+            text-align: center;
+            padding: 1.25rem;
+            background-color: var(--primary-navy);
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .page-footer p { margin: 0; }
+
+        @media (max-width: 600px) {
+            .page-header h1 { font-size: 1.2rem; }
+            .sheet-card { padding: 1rem; }
+        }
+
+        /* ===== พิมพ์ ===== */
+        @media print {
+            .no-print { display: none !important; }
+            body { background: #fff; }
+            .page-main { margin: 0; padding: 0; max-width: 100%; }
+            .sheet-card { box-shadow: none !important; border: none !important; padding: 0 !important; }
+            .table-block { overflow: visible; }
+            .sheet-table th, .sheet-table td { border: 1px solid #000 !important; }
+            .sheet-table td.action-cell,
+            .sheet-table th.action-cell { border: none !important; }
+            .cell-input, .cell-select {
+                background: transparent !important;
+                border-color: transparent !important;
+                box-shadow: none !important;
+            }
+            .cell-select { background-image: none !important; padding-right: 8px; }
+            .ph-btn { background: transparent !important; }
+            .ph-btn.manual::before { display: none; }
+        }
+
+        /* ===== สีประจำเฟส (เฉพาะหัวคอลัมน์ A / B / C): A น้ำตาล · B ดำ · C เทา ===== */
+        :root {
+            --ph-a: #8B4513;
+            --ph-b: #1A1A1A;
+            --ph-c: #707070;
+        }
+
+        .sheet-table th.ph-A { background: var(--ph-a); color: #fff; }
+        .sheet-table th.ph-B { background: var(--ph-b); color: #fff; }
+        .sheet-table th.ph-C { background: var(--ph-c); color: #fff; }
+
+        /* พิมพ์ออกมาให้หัวคอลัมน์มีสีเฟสด้วย */
+        .sheet-table th[class*="ph-"] {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ส่วนหัว (ธีมเดียวกับหน้าอื่น) -->
+    <header class="page-header no-print">
+        <div class="page-header-inner">
+            <div>
+                <h1>
+                    <i class="fa-solid fa-lightbulb"></i> ตารางคำนวณโหลดส่วนกลาง
+                    <span class="phase-chip">3 เฟส</span>
+                </h1>
+                <!-- ชื่อโปรเจกต์ที่กำลังทำ -->
+                <div id="roomInfo"></div>
+            </div>
+            <div class="header-actions">
+                <button type="button" onclick="createLoadSchedule()" class="hbtn hbtn-primary">
+                    <i class="fa-solid fa-floppy-disk"></i> บันทึกตารางโหลด
+                </button>
+                <!-- ปุ่มลัดไปหน้าสรุปผลการคำนวณ (href ใส่ projectId ให้ตอนโหลดหน้า) -->
+                <a id="summaryLink" href="../condo/condo-page-2.html" class="hbtn hbtn-ghost">
+                    <i class="fa-solid fa-file-invoice"></i> ไปหน้าสรุปผล
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="page-main">
+    <div class="sheet-card container-box">
+
+        <!-- Main Schedule Table Area Split into Two Tables -->
+        <div class="tables-row">
+            
+            <!-- Left Table: ส่วนผู้ใช้กำหนด -->
+            <div class="table-block">
+                <div class="section-header-title"><i class="fa-solid fa-pen-to-square"></i> ส่วนผู้ใช้กำหนด</div>
+                <table class="sheet-table" id="userDefinedTable">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">CIRCUIT NO.</th>
+                            <th rowspan="2">DESCRIPTION</th>
+                            <th rowspan="2">LOAD (VA)</th>
+                            <th colspan="3">LOAD (WATT)</th>
+                            <th rowspan="2">CB. TYPE</th>
+                        </tr>
+                        <tr>
+                            <th>WATT</th>
+                            <th>PF.</th>
+                            <th>VA</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTbody">
+                        <!-- แถววงจรสร้างด้วย JS (addCircuit) -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Middle Table: LOAD (VA) แยกเฟส A / B / C -->
+            <div class="table-block">
+                <div class="section-header-title"><i class="fa-solid fa-scale-balanced"></i> โหลดแต่ละเฟส</div>
+                <table class="sheet-table" id="phaseTable">
+                    <thead>
+                        <tr>
+                            <th colspan="3">LOAD (VA)</th>
+                        </tr>
+                        <tr>
+                            <th class="ph-A">A</th>
+                            <th class="ph-B">B</th>
+                            <th class="ph-C">C</th>
+                        </tr>
+                    </thead>
+                    <tbody id="phaseTbody">
+                        <!-- แถววงจรสร้างด้วย JS (addCircuit) -->
+                    </tbody>
+                </table>
+                <div class="phase-help no-print">
+                    เฟสกำหนดตามเลขวงจร: ฝั่งคี่ 1A 3B 5C 7A… ฝั่งคู่ 2A 4B 6C 8A…
+                    · วงจร CB P. = 3 ใช้ 3 ช่องเรียงกันและแบ่งโหลดเท่ากันทั้ง 3 เฟส
+                </div>
+            </div>
+
+            <!-- Right Table: ส่วนโปรแกรมสรุปผล -->
+            <div class="table-block">
+                <div class="section-header-title"><i class="fa-solid fa-calculator"></i> ส่วนโปรแกรมสรุปผล</div>
+                <table class="sheet-table" id="programResultTable">
+                    <thead>
+                        <tr>
+                            <th colspan="2">CB</th>
+                            <th colspan="3">CONDUCTOR</th>
+                            <th colspan="2">RACE WAY</th>
+                            <th class="action-cell no-print" rowspan="2"></th>
+                        </tr>
+                        <tr>
+                            <th>P.</th>
+                            <th>AT</th>
+                            <th>TYPE</th>
+                            <th>กลุ่มการติดตั้ง</th>
+                            <th>SIZE</th>
+                            <th>TYPE</th>
+                            <th>Ø</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultTbody">
+                        <!-- แถววงจรสร้างด้วย JS (addCircuit) -->
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+
+        <!-- เพิ่มวงจรแยกฝั่งเลขคี่ / เลขคู่ -->
+        <div class="add-group-bar no-print">
+            <button type="button" class="add-group-btn" onclick="addGroupCircuit('odd')">
+                <i class="fa-solid fa-plus"></i> เพิ่มวงจรเลขคี่
+                <span class="next-label" id="nextOddLabel">1A</span>
+            </button>
+            <button type="button" class="add-group-btn" onclick="addGroupCircuit('even')">
+                <i class="fa-solid fa-plus"></i> เพิ่มวงจรเลขคู่
+                <span class="next-label" id="nextEvenLabel">2A</span>
+            </button>
+            <span class="add-group-help">ปุ่ม "เพิ่ม" ท้ายแถว = เพิ่มวงจรฝั่งเดียวกันต่อจากแถวนั้น</span>
+        </div>
+
+        <!-- Bottom Summary Section ("ส่วนโปรแกรมสรุปผล") -->
+        <div class="table-block summary-block">
+            <div class="section-header-title"><i class="fa-solid fa-clipboard-list"></i> สรุปรวม (MAIN)</div>
+            <table class="sheet-table" id="summaryTable">
+                <thead>
+                    <tr>
+                        <td rowspan="2" class="total-head">
+                            TOTAL LOAD (VA)
+                        </td>
+                        <th colspan="3">LOAD (VA)</th>
+                        <th colspan="3">CB</th>
+                        <th colspan="3">CONDUCTOR</th>
+                        <th colspan="2">RACE WAY</th>
+                    </tr>
+                    <tr>
+                        <th class="ph-A">A</th>
+                        <th class="ph-B">B</th>
+                        <th class="ph-C">C</th>
+                        <th>TYPE</th>
+                        <th>P.</th>
+                        <th>AT</th>
+                        <th>TYPE</th>
+                        <th>กลุ่มการติดตั้ง</th>
+                        <th>SIZE</th>
+                        <th>TYPE</th>
+                        <th>Ø</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="num-cell" id="totalVaSum">0</td>
+                        <td class="num-cell phase-total" id="totalPhaseA">0</td>
+                        <td class="num-cell phase-total" id="totalPhaseB">0</td>
+                        <td class="num-cell phase-total" id="totalPhaseC">0</td>
+                        <td>
+                            <select id="mainCbType" class="cell-select cell-select-pill">
+                                <option value="" selected>-</option>
+                                <option value="MCCB">MCCB</option>
+                                <option value="MCB">MCB</option>
+                                <option value="RCBO">RCBO</option>
+                                <option value="RCCD">RCCD</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="mainCbP" class="cell-input" value="" /></td>
+                        <td><input type="text" id="mainCbAt" class="cell-input" value="" /></td>
+                        <td>
+                            <select id="mainCondType" class="cell-select cell-select-pill">
+                                <option value="" selected>-</option>
+                                <option value="IEC01">IEC01</option>
+                                <option value="NYY">NYY</option>
+                                <option value="VAF">VAF</option>
+                            </select>
+                        </td>
+                        <td>
+                            <select id="mainCondGroup" class="cell-select cell-select-pill">
+                                <option value="1" selected>1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                                <option value="5">5</option>
+                                <option value="6">6</option>
+                                <option value="7">7</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="mainCondSize" class="cell-input" value="" /></td>
+                        <td>
+                            <select id="mainRaceType" class="cell-select cell-select-pill">
+                                <option value="" selected>-</option>
+                                <option value="PVC">PVC</option>
+                                <option value="EMT">EMT</option>
+                            </select>
+                        </td>
+                        <td><input type="text" id="mainRaceSize" class="cell-input" value="" /></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+    </main>
+
+    <div id="saveToast" class="save-toast no-print" role="status" aria-live="polite" hidden>
+        <i class="fa-solid fa-circle-check"></i>
+        <span>บันทึกตารางโหลดส่วนกลางแล้ว</span>
+        <a id="toastSummaryLink" href="../condo/condo-page-2.html">ไปหน้าสรุปผล</a>
+    </div>
+
+    <footer class="page-footer no-print">
+        <p>&copy; ระบบคำนวณโหลดไฟฟ้าอาคารชุด</p>
+    </footer>
+
+    <!-- Application Script Logic -->
+    <script>
+        // Handle Circuit Description Selection Change
+        function handleDescChange(selectEl) {
+            if (selectEl.value === 'ผู้ใช้กำหนดเอง') {
+                const container = selectEl.closest('.desc-container');
+                container.innerHTML = `
+                    <input type="text" class="cell-input custom-desc" 
+                           placeholder="พิมพ์ระบุโหลด..." autofocus onblur="checkCustomDescEmpty(this)" />
+                `;
+            } else {
+                calculateRow(selectEl);
+            }
+        }
+
+        // Reset Custom Desc Input back to Dropdown if Empty
+        function checkCustomDescEmpty(inputEl) {
+            if (!inputEl.value.trim()) {
+                const container = inputEl.closest('.desc-container');
+                container.innerHTML = `
+                    <select class="cell-select cell-select-pill desc-select" onchange="handleDescChange(this)">
+                        <option value="" selected>-</option>
+                        <option value="แสงสว่าง">แสงสว่าง</option>
+                        <option value="เต้ารับ">เต้ารับ</option>
+                        <option value="แอร์">แอร์</option>
+                        <option value="ลิฟต์">ลิฟต์</option>
+                        <option value="ปั๊มน้ำ">ปั๊มน้ำ</option>
+                        <option value="พัดลมระบายอากาศ">พัดลมระบายอากาศ</option>
+                        <option value="SPARE">SPARE</option>
+                        <option value="ผู้ใช้กำหนดเอง">ผู้ใช้กำหนดเอง</option>
+                    </select>
+                `;
+            }
+        }
+
+        // Mutual Exclusion Input Handler (LOAD VA vs LOAD WATT)
+        function handleInputMode(element, mode) {
+            const userRow = element.closest('tr');
+            if (!userRow) return;
+
+            const directVaInput = userRow.querySelector('.direct-va');
+            const wattInput = userRow.querySelector('.watt-input');
+            const pfSelect = userRow.querySelector('.pf-select');
+
+            if (mode === 'va') {
+                if (directVaInput.value.trim() !== '') {
+                    wattInput.value = '';
+                    wattInput.disabled = true;
+                    pfSelect.disabled = true;
+                } else {
+                    wattInput.disabled = false;
+                    pfSelect.disabled = false;
+                }
+            } else if (mode === 'watt') {
+                if (wattInput.value.trim() !== '') {
+                    directVaInput.value = '';
+                    directVaInput.disabled = true;
+                } else {
+                    directVaInput.disabled = false;
+                }
+            }
+
+            autosizeInput(directVaInput);
+            autosizeInput(wattInput);
+            calculateRow(element);
+        }
+
+        // คำนวณ VA ของแถว (ตารางซ้าย) แล้วจัดเฟสใหม่
+        function calculateRow(element) {
+            const userRow = element.closest('tr');
+            if (!userRow || !userRow.classList.contains('circuit-row-user')) return;
+
+            const directVaInput = userRow.querySelector('.direct-va');
+            const wattInput = userRow.querySelector('.watt-input');
+            const pfSelect = userRow.querySelector('.pf-select');
+            const calculatedVaTd = userRow.querySelector('.calculated-va');
+
+            let vaValue = 0;
+
+            const directVa = parseFloat(directVaInput.value);
+            const watt = parseFloat(wattInput.value);
+            const pf = parseFloat(pfSelect.value) || 1.0;
+
+            if (!isNaN(directVa) && directVa > 0 && !directVaInput.disabled) {
+                vaValue = directVa;
+            } else if (!isNaN(watt) && watt >= 0 && !wattInput.disabled) {
+                vaValue = Math.round(watt / pf);
+            }
+
+            calculatedVaTd.textContent = vaValue > 0 ? vaValue.toLocaleString() : '0';
+
+            calculateTotalLoad();
+            updatePhases();
+        }
+
+        function rowVA(userRow) {
+            return parseFloat(userRow.querySelector('.calculated-va').textContent.replace(/,/g, '')) || 0;
+        }
+
+        // TOTAL LOAD (VA) = ผลรวม VA ทุกวงจร
+        function calculateTotalLoad() {
+            let totalVa = 0;
+            document.querySelectorAll('#userTbody .circuit-row-user').forEach(row => {
+                totalVa += rowVA(row);
+            });
+            document.getElementById('totalVaSum').textContent = totalVa.toLocaleString();
+        }
+
+        // ===== จัดโหลดลงเฟส A / B / C =====
+        const PHASES = ['A', 'B', 'C'];
+
+        // ===== เลขวงจรแบบตู้ 3 เฟส =====
+        // ฝั่งเลขคี่: 1A 3B 5C 7A 9B ...   ฝั่งเลขคู่: 2A 4B 6C 8A 10B ...
+        // k = ลำดับช่องในฝั่งนั้น (เริ่มที่ 1)
+        function slotNumber(group, k) { return group === 'even' ? 2 * k : 2 * k - 1; }
+        function slotPhase(k) { return PHASES[(k - 1) % 3]; }
+        function slotLabel(group, k) { return `${slotNumber(group, k)}${slotPhase(k)}`; }
+
+        // จำนวนขั้ว (ช่อง) ที่วงจรใช้ ตาม CB P. — 1, 2 หรือ 3
+        function rowPoles(resultRow) {
+            const el = resultRow ? resultRow.querySelector('.cb-p') : null;
+            const p = el ? parseInt(el.value, 10) : 1;
+            return p === 2 || p === 3 ? p : 1;
+        }
+
+        // ไล่เลขวงจรและเฟสของทุกแถว ตามลำดับในตาราง (ฝั่งคี่ก่อน แล้วฝั่งคู่)
+        function computePhases() {
+            const userRows = document.querySelectorAll('#userTbody .circuit-row-user');
+            const resultRows = document.querySelectorAll('#resultTbody .circuit-row-result');
+            const used = { odd: 0, even: 0 };
+            const totals = { A: 0, B: 0, C: 0 };
+
+            const rows = Array.from(userRows).map((u, i) => {
+                const group = u.dataset.group === 'even' ? 'even' : 'odd';
+                const poles = rowPoles(resultRows[i]);
+                const va = rowVA(u);
+
+                const ks = [];
+                for (let j = 1; j <= poles; j++) ks.push(used[group] + j);
+                used[group] += poles;
+
+                const slots = ks.map(k => slotNumber(group, k));
+                const phs = ks.map(slotPhase);
+                const item = {
+                    group, poles, slots,
+                    phase: phs.join(''),                       // 'A' | 'BC' | 'ABC' ...
+                    label: ks.map(k => slotLabel(group, k)).join('/'),
+                    A: 0, B: 0, C: 0
+                };
+                phs.forEach(ph => {                            // แบ่งโหลดเท่ากันตามจำนวนขั้ว
+                    item[ph] += va / poles;
+                    totals[ph] += va / poles;
+                });
+                return item;
+            });
+
+            return { rows, totals, used };
+        }
+
+        function fmtVA(v) {
+            return Math.round(v).toLocaleString();
+        }
+
+        // แสดงเลขวงจร โหลดแต่ละเฟส ผลรวม และเลขถัดไปบนปุ่มเพิ่มวงจร
+        function updatePhases() {
+            const userRows = document.querySelectorAll('#userTbody .circuit-row-user');
+            const phaseRows = document.querySelectorAll('#phaseTbody .circuit-row-phase');
+            const resultRows = document.querySelectorAll('#resultTbody .circuit-row-result');
+            const { rows, totals, used } = computePhases();
+            const firstEven = rows.findIndex(r => r.group === 'even');
+
+            rows.forEach((item, i) => {
+                const numTd = userRows[i] && userRows[i].querySelector('.circuit-num');
+                if (numTd) numTd.textContent = item.label;
+
+                const pr = phaseRows[i];
+                if (pr) {
+                    pr.querySelectorAll('.ph-val').forEach(td => {
+                        const ph = td.dataset.ph;
+                        const onPhase = item.phase.includes(ph);
+                        td.textContent = onPhase && item[ph] > 0 ? fmtVA(item[ph]) : '';
+                        td.classList.toggle('assigned', onPhase && item.poles === 1);
+                        td.classList.toggle('multi-pole', onPhase && item.poles > 1);
+                    });
+                }
+
+                // เส้นคั่นก่อนวงจรเลขคู่แถวแรก (เมื่อมีฝั่งคี่อยู่ด้านบน)
+                const isStart = i === firstEven && firstEven > 0;
+                [userRows[i], pr, resultRows[i]].forEach(r => r && r.classList.toggle('group-start', isStart));
+            });
+
+            document.getElementById('totalPhaseA').textContent = fmtVA(totals.A);
+            document.getElementById('totalPhaseB').textContent = fmtVA(totals.B);
+            document.getElementById('totalPhaseC').textContent = fmtVA(totals.C);
+
+            document.getElementById('nextOddLabel').textContent = slotLabel('odd', used.odd + 1);
+            document.getElementById('nextEvenLabel').textContent = slotLabel('even', used.even + 1);
+        }
+
+        // Re-calculate all rows
+        function calculateAll() {
+            const userRows = document.querySelectorAll('#userTbody .circuit-row-user');
+            userRows.forEach(row => {
+                const wattInput = row.querySelector('.watt-input');
+                if (wattInput) calculateRow(wattInput);
+            });
+            calculateTotalLoad();
+            updatePhases();
+        }
+
+        // ===== สร้างแถววงจร (3 ตาราง แถวคู่กัน) =====
+        function buildUserRow(group) {
+            const tr = document.createElement('tr');
+            tr.className = 'circuit-row-user';
+            tr.dataset.group = group;
+            tr.innerHTML = `
+                <td class="circuit-num"></td>
+                <td>
+                    <div class="desc-container">
+                        <select class="cell-select cell-select-pill desc-select" onchange="handleDescChange(this)">
+                            <option value="" selected>-</option>
+                            <option value="แสงสว่าง">แสงสว่าง</option>
+                            <option value="เต้ารับ">เต้ารับ</option>
+                            <option value="แอร์">แอร์</option>
+                            <option value="ลิฟต์">ลิฟต์</option>
+                            <option value="ปั๊มน้ำ">ปั๊มน้ำ</option>
+                            <option value="พัดลมระบายอากาศ">พัดลมระบายอากาศ</option>
+                            <option value="SPARE">SPARE</option>
+                            <option value="ผู้ใช้กำหนดเอง">ผู้ใช้กำหนดเอง</option>
+                        </select>
+                    </div>
+                </td>
+                <td><input type="number" class="cell-input direct-va" oninput="handleInputMode(this, 'va')" /></td>
+                <td><input type="number" class="cell-input watt-input" step="10" oninput="handleInputMode(this, 'watt')" /></td>
+                <td>
+                    <select class="cell-select cell-select-pill pf-select" onchange="calculateRow(this)">
+                        <option value="1.0" selected>1</option>
+                        <option value="0.9">0.9</option>
+                        <option value="0.8">0.8</option>
+                        <option value="0.7">0.7</option>
+                        <option value="0.6">0.6</option>
+                        <option value="0.5">0.5</option>
+                    </select>
+                </td>
+                <td class="calculated-va num-cell">0</td>
+                <td>
+                    <select class="cell-select cell-select-pill cb-type-select">
+                        <option value="">-</option>
+                        <option value="MCB" selected>MCB</option>
+                        <option value="MCCB">MCCB</option>
+                        <option value="RCBO">RCBO</option>
+                        <option value="RCCD">RCCD</option>
+                    </select>
+                </td>
+            `;
+            return tr;
+        }
+
+        function buildPhaseRow(group) {
+            const tr = document.createElement('tr');
+            tr.className = 'circuit-row-phase';
+            tr.dataset.group = group;
+            tr.innerHTML = PHASES.map(ph => `<td class="ph-val num-cell" data-ph="${ph}"></td>`).join('');
+            return tr;
+        }
+
+        function buildResultRow(group) {
+            const tr = document.createElement('tr');
+            tr.className = 'circuit-row-result';
+            tr.dataset.group = group;
+            tr.innerHTML = `
+                <td><input type="text" class="cell-input cb-p" value="1" inputmode="numeric" title="ใส่ 3 สำหรับวงจร 3 เฟส (ใช้ 3 ช่อง)" /></td>
+                <td><input type="text" class="cell-input cb-at" value="" /></td>
+                <td>
+                    <select class="cell-select cell-select-pill cond-type">
+                        <option value="">-</option>
+                        <option value="IEC01" selected>IEC01</option>
+                        <option value="NYY">NYY</option>
+                        <option value="VAF">VAF</option>
+                    </select>
+                </td>
+                <td>
+                    <select class="cell-select cell-select-pill cond-group">
+                        <option value="1" selected>1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                    </select>
+                </td>
+                <td><input type="text" class="cell-input cond-size" value="" /></td>
+                <td>
+                    <select class="cell-select cell-select-pill race-type">
+                        <option value="">-</option>
+                        <option value="PVC" selected>PVC</option>
+                        <option value="EMT">EMT</option>
+                    </select>
+                </td>
+                <td><input type="text" class="cell-input race-size" value="" /></td>
+                <td class="action-cell no-print">
+                    <div class="row-actions">
+                        <button type="button" onclick="addRow(this)" class="row-btn add" title="เพิ่มวงจรฝั่งเดียวกันต่อจากแถวนี้">
+                            เพิ่ม
+                        </button>
+                        <button type="button" onclick="removeRow(this)" class="row-btn del" title="ลบแถว">
+                            ลบ
+                        </button>
+                    </div>
+                </td>
+            `;
+            return tr;
+        }
+
+        // เพิ่มวงจรใน 3 ตารางพร้อมกัน
+        // afterIndex: แทรกต่อจากแถวนั้น (ฝั่งเดียวกัน) / ไม่ระบุ: ต่อท้ายฝั่งของตัวเอง
+        // ลำดับในตารางจะเป็นฝั่งคี่ทั้งหมดก่อน แล้วตามด้วยฝั่งคู่เสมอ
+        function addCircuit(group, afterIndex) {
+            const tbodies = ['userTbody', 'phaseTbody', 'resultTbody'].map(id => document.getElementById(id));
+            const newRows = [buildUserRow(group), buildPhaseRow(group), buildResultRow(group)];
+            const existing = Array.from(tbodies[0].children);
+
+            let insertAt;
+            if (afterIndex !== undefined && afterIndex !== null) {
+                insertAt = afterIndex + 1;
+            } else if (group === 'odd') {
+                const firstEven = existing.findIndex(r => r.dataset.group === 'even');
+                insertAt = firstEven === -1 ? existing.length : firstEven;
+            } else {
+                insertAt = existing.length;
+            }
+
+            tbodies.forEach((tb, j) => tb.insertBefore(newRows[j], tb.children[insertAt] || null));
+            calculateRow(newRows[0].querySelector('.watt-input'));
+            return newRows;
+        }
+
+        // ปุ่ม "เพิ่มวงจรเลขคี่ / เลขคู่"
+        function addGroupCircuit(group) {
+            const [userRow] = addCircuit(group);
+            hasUnsavedChanges = true;
+            userRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            const desc = userRow.querySelector('.desc-select');
+            if (desc) desc.focus({ preventScroll: true });
+        }
+
+        // ปุ่ม "เพิ่ม" ท้ายแถว: เพิ่มวงจรฝั่งเดียวกันต่อจากแถวนี้
+        function addRow(btn) {
+            const resultRow = btn.closest('tr');
+            const idx = Array.from(document.getElementById('resultTbody').children).indexOf(resultRow);
+            addCircuit(resultRow.dataset.group === 'even' ? 'even' : 'odd', idx);
+            hasUnsavedChanges = true;
+        }
+
+        // ลบแถวทั้ง 3 ตาราง แล้วไล่เลขวงจรใหม่
+        function removeRow(btn) {
+            const userTbody = document.getElementById('userTbody');
+            const resultTbody = document.getElementById('resultTbody');
+
+            if (userTbody.children.length <= 1) {
+                alert('ต้องมีอย่างน้อย 1 วงจรในตาราง');
+                return;
+            }
+
+            const resultRow = btn.closest('tr');
+            const rowIndex = Array.from(resultTbody.children).indexOf(resultRow);
+
+            if (rowIndex !== -1) {
+                userTbody.children[rowIndex].remove();
+                document.getElementById('phaseTbody').children[rowIndex].remove();
+                resultTbody.children[rowIndex].remove();
+            }
+
+            hasUnsavedChanges = true;
+            calculateTotalLoad();
+            updatePhases();
+        }
+
+        // On Load Initial Calculation
+        window.onload = function() {
+            // เปลี่ยน CB P. (1 ↔ 3) แล้วไล่เลขวงจร/เฟสใหม่
+            document.getElementById('resultTbody').addEventListener('input', e => {
+                if (e.target.classList.contains('cb-p')) updatePhases();
+            });
+            setSummaryLink();
+            showRoomInfo();
+            if (!restoreLoadSchedule()) addCircuit('odd');   // เริ่มที่วงจร 1A
+            calculateAll();
+            initAutosize();
+        };
+
+        // ===== ช่องกรอกยืดหดตามความยาวข้อความ =====
+        // ความกว้างขั้นต่ำของแต่ละช่อง (หน่วย: จำนวนตัวอักษร)
+        const AUTOSIZE_MIN_CH = {
+            'direct-va': 6, 'watt-input': 6, 'cb-p': 2, 'cb-at': 3,
+            'cond-size': 7, 'race-size': 3, 'custom-desc': 12
+        };
+        const SUMMARY_MIN_CH = {
+            mainCbP: 2, mainCbAt: 3, mainCondSize: 7, mainRaceSize: 3
+        };
+        const measureCtx = document.createElement('canvas').getContext('2d');
+
+        function minChFor(el) {
+            if (el.id && SUMMARY_MIN_CH[el.id]) return SUMMARY_MIN_CH[el.id];
+            for (const cls of el.classList) {
+                if (AUTOSIZE_MIN_CH[cls]) return AUTOSIZE_MIN_CH[cls];
+            }
+            return 4;
+        }
+
+        function autosizeInput(el) {
+            if (!(el instanceof HTMLInputElement) || !el.classList.contains('cell-input')) return;
+            const cs = getComputedStyle(el);
+            measureCtx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+            const text = (el.value || el.placeholder || '').toUpperCase();
+            const textWidth = measureCtx.measureText(text).width;
+            const minWidth = minChFor(el) * measureCtx.measureText('0').width;
+            const padding = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight)
+                          + parseFloat(cs.borderLeftWidth) + parseFloat(cs.borderRightWidth) + 4;
+            el.style.width = Math.ceil(Math.max(textWidth, minWidth) + padding) + 'px';
+        }
+
+        function autosizeAll(root) {
+            (root || document).querySelectorAll('input.cell-input').forEach(autosizeInput);
+        }
+
+        function initAutosize() {
+            autosizeAll();
+            // พิมพ์แล้วยืดหดทันที
+            document.addEventListener('input', e => autosizeInput(e.target));
+            // แถวใหม่ / ช่องพิมพ์ DESCRIPTION เอง ที่สร้างขึ้นภายหลัง
+            const observer = new MutationObserver(muts => {
+                muts.forEach(m => m.addedNodes.forEach(node => {
+                    if (node.nodeType !== 1) return;
+                    if (node.matches && node.matches('input.cell-input')) autosizeInput(node);
+                    else autosizeAll(node);
+                }));
+            });
+            ['userTbody', 'resultTbody'].forEach(id =>
+                observer.observe(document.getElementById(id), { childList: true, subtree: true }));
+            // วัดใหม่เมื่อฟอนต์โหลดเสร็จ (ความกว้างตัวอักษรเปลี่ยน)
+            if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => autosizeAll());
+        }
+
+        // ===== หน้านี้เก็บข้อมูลที่ data.commonLoad ของโปรเจกต์ =====
+        const SECTION = { key: 'commonLoad', name: 'โหลดส่วนกลาง' };
+
+        // ตารางที่บันทึกไว้ (ข้อมูลตั้งต้นจาก index.html เป็น [] = ยังไม่มี)
+        function getSectionSchedule(data) {
+            const ls = data && data[SECTION.key];
+            return ls && !Array.isArray(ls) && Array.isArray(ls.circuits) ? ls : null;
+        }
+
+        // ===== ปุ่มลัดไปหน้าสรุปผล =====
+        let hasUnsavedChanges = false;
+        document.addEventListener('input', () => { hasUnsavedChanges = true; });
+        document.addEventListener('change', () => { hasUnsavedChanges = true; });
+
+        function setSummaryLink() {
+            const link = document.getElementById('summaryLink');
+            const { projectId } = getRoomContext();
+            if (projectId) {
+                link.href = `../condo/condo-page-2.html?projectId=${encodeURIComponent(projectId)}`;
+            }
+            // เตือนก่อนออกจากหน้า ถ้ามีการแก้ไขที่ยังไม่ได้กด "บันทึกตารางโหลด"
+            link.addEventListener('click', e => {
+                if (hasUnsavedChanges &&
+                    !confirm('ข้อมูลที่แก้ไขยังไม่ได้บันทึก\nกด "บันทึกตารางโหลด" ก่อนเพื่อบันทึก\n\nต้องการไปหน้าสรุปผลโดยไม่บันทึกหรือไม่?')) {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // ===== ดึงตารางโหลดที่เคยบันทึกไว้กลับมาใส่ในช่องกรอก =====
+        function setField(row, selector, value) {
+            const el = row.querySelector(selector);
+            if (!el || value === undefined || value === null) return;
+            el.value = value;
+            // ถ้าค่าที่บันทึกไว้ไม่มีในตัวเลือกของ dropdown ให้คงค่าเดิมของช่องไว้
+            if (el.tagName === 'SELECT' && el.value !== String(value)) {
+                el.selectedIndex = 0;
+            }
+        }
+
+        function setDescription(userRow, text) {
+            if (!text) return;
+            const container = userRow.querySelector('.desc-container');
+            const select = container.querySelector('select');
+            const isPreset = select && Array.from(select.options)
+                .some(o => o.value === text && o.value !== 'ผู้ใช้กำหนดเอง');
+
+            if (isPreset) {
+                select.value = text;
+            } else {
+                // DESCRIPTION ที่ผู้ใช้พิมพ์เอง
+                container.innerHTML = `
+                    <input type="text" class="cell-input custom-desc"
+                           placeholder="พิมพ์ระบุโหลด..." onblur="checkCustomDescEmpty(this)" />
+                `;
+                container.querySelector('input').value = text;
+            }
+        }
+
+        function restoreLoadSchedule() {
+            const { projectId } = getRoomContext();
+            if (!projectId) return false;
+
+            let data = null;
+            try { data = JSON.parse(localStorage.getItem(`e_condo_data_${projectId}`) || 'null'); } catch (e) {}
+            const ls = getSectionSchedule(data);
+            if (!ls || ls.circuits.length === 0) return false;
+
+            // สร้างแถวตามฝั่งเลขคี่/คู่ที่บันทึกไว้ (ข้อมูลเก่าที่ไม่มี group ถือเป็นฝั่งคี่)
+            ['userTbody', 'phaseTbody', 'resultTbody'].forEach(id => { document.getElementById(id).innerHTML = ''; });
+            ls.circuits.forEach(c => addCircuit(c.group === 'even' ? 'even' : 'odd'));
+
+            const userRows = document.querySelectorAll('#userTbody .circuit-row-user');
+            const resultRows = document.querySelectorAll('#resultTbody .circuit-row-result');
+
+            ls.circuits.forEach((c, i) => {
+                const u = userRows[i];
+                const r = resultRows[i];
+                if (!u || !r) return;
+
+                setDescription(u, c.description);
+
+                // โหมดกรอก: VA โดยตรง หรือ WATT + PF
+                const vaInput = u.querySelector('.direct-va');
+                const wattInput = u.querySelector('.watt-input');
+                const directVA = c.directVA !== undefined
+                    ? c.directVA
+                    : (!c.watt && c.loadVA ? String(c.loadVA) : '');   // ข้อมูลรุ่นเก่าที่ยังไม่มี directVA
+
+                if (c.watt) {
+                    wattInput.value = c.watt;
+                    setField(u, '.pf-select', c.pf);
+                    handleInputMode(wattInput, 'watt');
+                } else if (directVA) {
+                    vaInput.value = directVA;
+                    handleInputMode(vaInput, 'va');
+                }
+
+                setField(u, '.cb-type-select', c.cbType);
+                setField(r, '.cb-p', c.cbPole);
+                setField(r, '.cb-at', c.cbAT);
+                setField(r, '.cond-type', c.conductorType);
+                setField(r, '.cond-group', c.installGroup);
+                setField(r, '.cond-size', c.conductorSize);
+                setField(r, '.race-type', c.racewayType);
+                setField(r, '.race-size', c.racewaySize);
+            });
+
+            const m = ls.main || {};
+            const mainFields = {
+                mainCbType: m.cbType, mainCbP: m.cbPole, mainCbAt: m.cbAT,
+                mainCondType: m.conductorType, mainCondGroup: m.installGroup,
+                mainCondSize: m.conductorSize, mainRaceType: m.racewayType, mainRaceSize: m.racewaySize
+            };
+            Object.entries(mainFields).forEach(([id, value]) => {
+                const el = document.getElementById(id);
+                if (el && value !== undefined && value !== null) el.value = value;
+            });
+
+            // แจ้งว่ากำลังแก้ไขข้อมูลเดิม
+            const info = document.getElementById('roomInfo');
+            if (info && ls.savedAt) {
+                info.innerHTML += `<div class="restore-note"><i class="fa-solid fa-clock-rotate-left"></i> โหลดข้อมูลเดิมแล้ว (บันทึกล่าสุด ${new Date(ls.savedAt).toLocaleString('th-TH')}) — แก้ไขแล้วกด "บันทึกตารางโหลด" เพื่อบันทึกทับ</div>`;
+            }
+            return true;
+        }
+
+        // หา projectId ที่กำลังทำ (จาก URL ก่อน ถ้าไม่มีใช้โปรเจกต์ปัจจุบัน)
+        function getRoomContext() {
+            const params = new URLSearchParams(window.location.search);
+            let current = {};
+            try { current = JSON.parse(localStorage.getItem('e_condo_current_project') || '{}'); } catch (e) {}
+            return { projectId: params.get('projectId') || current.id };
+        }
+
+        // ข้อความ DESCRIPTION ของแถว (dropdown หรือช่องพิมพ์เอง)
+        function getRowDescription(userRow) {
+            const container = userRow.querySelector('.desc-container');
+            const field = container.querySelector('select, input');
+            return field ? field.value.trim() : '';
+        }
+
+        function cellValue(row, selector) {
+            const el = row.querySelector(selector);
+            return el ? el.value.trim() : '';
+        }
+
+        // แจ้งบันทึกสำเร็จ พร้อมลิงก์ไปหน้าสรุปผล
+        let toastTimer = null;
+        function showSavedToast(projectId) {
+            const toast = document.getElementById('saveToast');
+            document.getElementById('toastSummaryLink').href =
+                `../condo/condo-page-2.html?projectId=${encodeURIComponent(projectId)}`;
+            toast.hidden = false;
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => { toast.hidden = true; }, 4000);
+        }
+
+        // บันทึกตารางลงโปรเจกต์ (data.commonLoad / data.emergencyLoad)
+        function createLoadSchedule() {
+            const { projectId } = getRoomContext();
+            const key = `e_condo_data_${projectId}`;
+            let data;
+            try { data = projectId ? JSON.parse(localStorage.getItem(key) || 'null') : null; } catch (e) { data = null; }
+            if (!data) {
+                alert('ไม่พบข้อมูลโปรเจกต์\nกรุณาสร้างหรือเลือกโปรเจกต์จากหน้าแรกก่อน');
+                return;
+            }
+
+            const userRows = document.querySelectorAll('#userTbody .circuit-row-user');
+            const resultRows = document.querySelectorAll('#resultTbody .circuit-row-result');
+            const phaseResult = computePhases();
+
+            const circuits = Array.from(userRows).map((u, i) => {
+                const r = resultRows[i];
+                const ph = phaseResult.rows[i];
+                const va = parseFloat(u.querySelector('.calculated-va').textContent.replace(/,/g, '')) || 0;
+                return {
+                    no: ph.label,                    // เช่น 1A, 4B, 1A/3B/5C
+                    description: getRowDescription(u),
+                    loadVA: va,
+                    directVA: cellValue(u, '.direct-va'),
+                    watt: cellValue(u, '.watt-input'),
+                    pf: cellValue(u, '.pf-select'),
+                    cbType: cellValue(u, '.cb-type-select'),
+                    cbPole: cellValue(r, '.cb-p'),
+                    cbAT: cellValue(r, '.cb-at'),
+                    conductorType: cellValue(r, '.cond-type'),
+                    installGroup: cellValue(r, '.cond-group'),
+                    conductorSize: cellValue(r, '.cond-size'),
+                    racewayType: cellValue(r, '.race-type'),
+                    racewaySize: cellValue(r, '.race-size'),
+                    group: ph.group,                 // 'odd' | 'even'
+                    slots: ph.slots,                 // เลขช่องที่ใช้ เช่น [1, 3, 5]
+                    phase: ph.phase,                 // 'A' | 'B' | 'C' | 'ABC' ...
+                    loadA: Math.round(ph.A),
+                    loadB: Math.round(ph.B),
+                    loadC: Math.round(ph.C)
+                };
+            });
+
+            const empty = circuits.filter(c => !c.description && c.loadVA === 0);
+            if (empty.length === circuits.length) {
+                alert('ยังไม่มีข้อมูลวงจร กรุณากรอก DESCRIPTION หรือ LOAD อย่างน้อย 1 วงจร');
+                return;
+            }
+
+            data[SECTION.key] = {
+                circuits: circuits,
+                totalVA: parseFloat(document.getElementById('totalVaSum').textContent.replace(/,/g, '')) || 0,
+                totalA: Math.round(phaseResult.totals.A),
+                totalB: Math.round(phaseResult.totals.B),
+                totalC: Math.round(phaseResult.totals.C),
+                main: {
+                    cbType: document.getElementById('mainCbType').value,
+                    cbPole: document.getElementById('mainCbP').value.trim(),
+                    cbAT: document.getElementById('mainCbAt').value.trim(),
+                    conductorType: document.getElementById('mainCondType').value,
+                    installGroup: document.getElementById('mainCondGroup').value,
+                    conductorSize: document.getElementById('mainCondSize').value.trim(),
+                    racewayType: document.getElementById('mainRaceType').value,
+                    racewaySize: document.getElementById('mainRaceSize').value.trim()
+                },
+                savedAt: new Date().toISOString()
+            };
+
+            try {
+                localStorage.setItem(key, JSON.stringify(data));
+            } catch (e) {
+                alert('บันทึกข้อมูลไม่สำเร็จ: ' + e.message);
+                return;
+            }
+            hasUnsavedChanges = false;
+            showSavedToast(projectId);
+        }
+
+        // แสดงชื่อโปรเจกต์ที่กำลังทำ
+        function showRoomInfo() {
+            const box = document.getElementById('roomInfo');
+            const { projectId } = getRoomContext();
+            let name = '';
+            try {
+                const data = JSON.parse(localStorage.getItem(`e_condo_data_${projectId}`) || '{}');
+                name = data.projectInfo && data.projectInfo.name ? data.projectInfo.name : '';
+            } catch (e) {}
+            document.title = name ? `${SECTION.name} · ${name}` : SECTION.name;
+            box.innerHTML = name
+                ? `<strong>${name.replace(/</g, '&lt;')}</strong> · ตาราง${SECTION.name} (ระบบไฟ 3 เฟส)`
+                : 'ยังไม่ได้เลือกโปรเจกต์ — กรุณาเริ่มจากหน้าแรก';
+        }
+    </script>
+</body>
+</html>

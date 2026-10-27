@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>E-condo</title>
+    <!-- โหลดฟอนต์ Prompt จาก Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- ไอคอน Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-navy: #0F2027;
+            --secondary-navy: #203A43;
+            --accent-orange: #FF6B35;
+            --hover-orange: #E85A24;
+            --bg-light: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2C3E50;
+            --text-light: #6C7A89;
+            --danger-red: #E53E3E;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        header {
+            background: linear-gradient(135deg, var(--primary-navy), var(--secondary-navy));
+            color: white;
+            padding: 3rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            border-bottom: 4px solid var(--accent-orange);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-weight: 300;
+            opacity: 0.85;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 4rem auto;
+            padding: 0 1.5rem;
+            width: 100%;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            justify-content: center;
+        }
+
+        .card-link {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            text-decoration: none;
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+            border-top: 5px solid transparent;
+            cursor: pointer;
+        }
+
+        .card-link i {
+            font-size: 3.5rem;
+            color: var(--accent-orange);
+            margin-bottom: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card-link span {
+            font-size: 1.3rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .card-link:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 25px rgba(255, 107, 53, 0.25);
+            border-top-color: var(--accent-orange);
+        }
+
+        .card-link:hover i {
+            transform: scale(1.1);
+        }
+
+        /* Modal Popup Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 480px;
+            width: 90%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: left;
+            position: relative;
+        }
+
+        .modal-box h3 {
+            font-size: 1.4rem;
+            color: var(--primary-navy);
+            margin-bottom: 0.5rem;
+            text-align: center;
+        }
+
+        .modal-box p.subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            margin-bottom: 0.4rem;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--accent-orange);
+        }
+
+        /* Radio Options Style */
+        .radio-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.8rem;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 0.8rem;
+            border: 2px solid #E2E8F0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .radio-option:hover {
+            border-color: var(--accent-orange);
+            background-color: #FFF5F2;
+        }
+
+        .radio-option input[type="radio"] {
+            accent-color: var(--accent-orange);
+            width: 16px;
+            height: 16px;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-top: 1.5rem;
+        }
+
+        .btn {
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-orange);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-orange);
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-navy);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .project-select-list {
+            max-height: 250px;
+            overflow-y: auto;
+            margin-bottom: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .project-item {
+            padding: 0.8rem 1rem;
+            background: var(--bg-light);
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+
+        .project-item:hover {
+            background: #E2E8F0;
+            border-color: #CBD5E1;
+        }
+
+        .project-info {
+            flex-grow: 1;
+        }
+
+        .btn-delete-project {
+            color: var(--text-light);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            transition: all 0.2s;
+            margin-left: 0.5rem;
+        }
+
+        .btn-delete-project:hover {
+            color: var(--danger-red);
+            background-color: #FED7D7;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: var(--primary-navy);
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-city"></i> ยินดีต้อนรับสู่เว็บไซต์ E-condo</h1>
+        <p>ระบบคำนวณและวางแผนระบบไฟฟ้าสำหรับอาคารชุดพักอาศัย</p>
+    </header>
+
+    <div class="container">
+        <div class="menu-grid">
+            <div onclick="handleBuildingClick()" class="card-link">
+                <i class="fa-solid fa-building-user"></i>
+                <span>อาคารชุดที่อยู่อาศัย</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 1: เลือกว่าจะสร้างโปรเจกต์ใหม่ หรือแก้ไขเดิม -->
+    <div id="choiceModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: center;">
+            <h3>จัดการโปรเจกต์อาคารชุด</h3>
+            <p class="subtitle">กรุณาเลือกรูปแบบการทำงานที่ต้องการ</p>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="showNewProjectForm()">
+                    <i class="fa-solid fa-plus-circle"></i> สร้างโปรเจกต์ใหม่
+                </button>
+                <button class="btn btn-secondary" onclick="showProjectList()">
+                    <i class="fa-solid fa-folder-open"></i> เลือกแก้ไขโปรเจกต์เดิม
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: กำหนดรายละเอียดโปรเจกต์ใหม่ -->
+    <div id="newProjectModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3>สร้างโปรเจกต์ใหม่</h3>
+            <p class="subtitle">กรุณากรอกข้อมูลและรายละเอียดอาคาร</p>
+            
+            <!-- 1. ชื่อโปรเจกต์ -->
+            <div class="form-group">
+                <label class="form-label" for="projectNameInput">ชื่อโปรเจกต์</label>
+                <input type="text" id="projectNameInput" class="input-field" placeholder="ใส่ชื่อโปรเจคใหม่ของคุณ" />
+            </div>
+
+            <!-- 2. จำนวนชั้น -->
+            <div class="form-group">
+                <label class="form-label" for="projectFloorsInput">จำนวนชั้นของอาคาร (ชั้น)</label>
+                <input type="number" id="projectFloorsInput" class="input-field" min="1" max="100" placeholder="ใส่จำนวนชั้น" />
+            </div>
+
+            <!-- 3. เขตการไฟฟ้า -->
+            <div class="form-group">
+                <label class="form-label">เขตพื้นที่การไฟฟ้า</label>
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="authority" value="MEA" checked />
+                        <span>กฟน. (MEA)</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="authority" value="PEA" />
+                        <span>กฟภ. (PEA)</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="createNewProject()">
+                    <i class="fa-solid fa-check"></i> ตกลงและเริ่มทำงาน
+                </button>
+                <button class="btn btn-secondary" style="background:#6C7A89;" onclick="closeAllModals()">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: รายชื่อโปรเจกต์เดิม -->
+    <div id="projectListModal" class="modal-overlay">
+        <div class="modal-box" style="text-align: center;">
+            <h3>เลือกโปรเจกต์เดิม</h3>
+            <p class="subtitle">คลิกเลือกโปรเจกต์ที่ต้องการเปิดแก้ไข หรือกดลบ</p>
+            <div id="projectListContainer" class="project-select-list">
+                <!-- รายชื่อโปรเจกต์จะถูกสร้างผ่าน JS -->
+            </div>
+            <div class="btn-group">
+                <button class="btn btn-secondary" style="background:#6C7A89;" onclick="closeAllModals()">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; ระบบคำนวณโหลดไฟฟ้าอาคารชุด</p>
+    </footer>
+
+    <script>
+        // ดึงข้อมูลรายชื่อโปรเจกต์จาก LocalStorage
+        function getProjects() {
+            const projects = localStorage.getItem('e_condo_projects');
+            return projects ? JSON.parse(projects) : [];
+        }
+
+        // เมื่อกดที่การ์ด "อาคารชุดที่อยู่อาศัย"
+        function handleBuildingClick() {
+            const projects = getProjects();
+            if (projects.length === 0) {
+                showNewProjectForm();
+            } else {
+                document.getElementById('choiceModal').classList.add('active');
+            }
+        }
+
+        // แสดงฟอร์มสร้างโปรเจกต์ใหม่
+        function showNewProjectForm() {
+            closeAllModals();
+            document.getElementById('projectNameInput').value = '';
+            document.getElementById('projectFloorsInput').value = '';
+            document.querySelector('input[name="authority"][value="MEA"]').checked = true;
+            document.getElementById('newProjectModal').classList.add('active');
+        }
+
+        // บันทึกและสร้างโปรเจกต์ใหม่แบบแยกพื้นที่เก็บข้อมูล
+        function createNewProject() {
+            const nameInput = document.getElementById('projectNameInput');
+            const floorsInput = document.getElementById('projectFloorsInput');
+            const authoritySelected = document.querySelector('input[name="authority"]:checked');
+
+            const name = nameInput.value.trim();
+            const floors = parseInt(floorsInput.value, 10);
+            const authority = authoritySelected ? authoritySelected.value : 'MEA';
+
+            if (!name) {
+                alert('กรุณากรอกชื่อโปรเจกต์');
+                return;
+            }
+
+            if (isNaN(floors) || floors < 1) {
+                alert('กรุณากรอกจำนวนชั้นให้ถูกต้อง (อย่างน้อย 1 ชั้น)');
+                return;
+            }
+
+            const projectId = 'proj_' + Date.now();
+            const projects = getProjects();
+            
+            const newProject = {
+                id: projectId,
+                name: name,
+                floors: floors,
+                authority: authority, // 'MEA' หรือ 'PEA'
+                createdAt: new Date().toISOString()
+            };
+
+            // 1. บันทึกลงในรายการโปรเจกต์รวม
+            projects.push(newProject);
+            localStorage.setItem('e_condo_projects', JSON.stringify(projects));
+
+            // 2. ตั้งค่าโปรเจกต์ปัจจุบันที่กำลังเปิดใช้งาน
+            localStorage.setItem('e_condo_current_project', JSON.stringify(newProject));
+
+            // 3. จองพื้นที่เก็บข้อมูลเฉพาะของโปรเจกต์นี้
+            const initialData = {
+                projectInfo: newProject,
+                rooms: [],
+                floorBoards: [],
+                commonLoad: [],
+                emergencyLoad: []
+            };
+            localStorage.setItem(`e_condo_data_${projectId}`, JSON.stringify(initialData));
+
+            // นำทางไปที่ condo/condo-page-1.html
+            window.location.href = 'condo/condo-page-1.html';
+        }
+
+        // แสดงรายชื่อโปรเจกต์เดิม พร้อมปุ่มลบ
+        function showProjectList() {
+            closeAllModals();
+            const projects = getProjects();
+            const container = document.getElementById('projectListContainer');
+            container.innerHTML = '';
+
+            if (projects.length === 0) {
+                container.innerHTML = '<p style="color:#6C7A89; padding: 1rem;">ไม่มีโปรเจกต์ในระบบ</p>';
+            } else {
+                projects.forEach(p => {
+                    const item = document.createElement('div');
+                    item.className = 'project-item';
+                    const authorityLabel = p.authority === 'PEA' ? 'กฟภ.' : 'กฟน.';
+                    const floorsLabel = p.floors ? `${p.floors} ชั้น` : '';
+                    
+                    item.innerHTML = `
+                        <div class="project-info" onclick="selectProject('${p.id}')">
+                            <div style="color:var(--primary-navy); font-size:1rem;"><i class="fa-solid fa-building"></i> ${p.name}</div>
+                            <div style="font-size:0.75rem; color:#6C7A89; margin-left:1.2rem;">
+                                ${floorsLabel} | เขต ${authorityLabel}
+                            </div>
+                        </div>
+                        <div class="btn-delete-project" onclick="deleteProject(event, '${p.id}', '${p.name}')" title="ลบโปรเจกต์นี้">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </div>
+                    `;
+                    container.appendChild(item);
+                });
+            }
+
+            document.getElementById('projectListModal').classList.add('active');
+        }
+
+        // เลือกโปรเจกต์เดิม
+        function selectProject(projectId) {
+            const projects = getProjects();
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+                localStorage.setItem('e_condo_current_project', JSON.stringify(project));
+                window.location.href = 'condo/condo-page-1.html';
+            }
+        }
+
+        // ลบโปรเจกต์และล้างข้อมูลเฉพาะของโปรเจกต์นั้นออกจากระบบ
+        function deleteProject(event, projectId, projectName) {
+            event.stopPropagation();
+            
+            if (confirm(`คุณต้องการลบโปรเจกต์ "${projectName}" ออกจากเครื่องใช่หรือไม่?\n*ข้อมูลทั้งหมดของอาคารนี้จะถูกลบถาวร`)) {
+                let projects = getProjects();
+                projects = projects.filter(p => p.id !== projectId);
+                localStorage.setItem('e_condo_projects', JSON.stringify(projects));
+
+                localStorage.removeItem(`e_condo_data_${projectId}`);
+
+                const currentProj = JSON.parse(localStorage.getItem('e_condo_current_project') || '{}');
+                if (currentProj.id === projectId) {
+                    localStorage.removeItem('e_condo_current_project');
+                }
+
+                if (projects.length === 0) {
+                    closeAllModals();
+                } else {
+                    showProjectList();
+                }
+            }
+        }
+
+        // ปิด Modal ทั้งหมด
+        function closeAllModals() {
+            document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+        }
+    </script>
+
+</body>
+</html>

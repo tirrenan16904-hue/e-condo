@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สรุปผลการคำนวณอาคารชุดที่อยู่อาศัย</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-navy: #0F2027;
+            --secondary-navy: #203A43;
+            --accent-orange: #FF6B35;
+            --hover-orange: #E85A24;
+            --bg-light: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2C3E50;
+        }
+
+        body {
+            font-family: 'Prompt', 'Sarabun', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Engineering Sheet Table Styles */
+        .eng-table {
+            border-collapse: collapse;
+            width: 100%;
+            background-color: #ffffff;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .eng-table th, .eng-table td {
+            border: 1px solid #1f2937;
+            padding: 6px 8px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        .eng-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .eng-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        .eng-table td.ph { min-width: 64px; }
+
+        /* สีประจำเฟส (เฉพาะหัวคอลัมน์ A / B / C): A น้ำตาล · B ดำ · C เทา */
+        .eng-table th.ph-A { background: #8B4513; color: #fff; }
+        .eng-table th.ph-B { background: #1A1A1A; color: #fff; }
+        .eng-table th.ph-C { background: #707070; color: #fff; }
+        .eng-table th[class*="ph-"] { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+        /* เส้นคั่นระหว่างวงจรฝั่งเลขคี่กับฝั่งเลขคู่ (ตาราง 3 เฟส) */
+        .eng-table tr.group-start > td { border-top: 3px solid #203A43; }
+
+
+        /* Printable Area Styles */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #modalContent, #modalContent * {
+                visibility: visible;
+            }
+            #modalContent {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ส่วนหัว Header -->
+    <header class="bg-gradient-to-r from-[#0F2027] to-[#203A43] text-white py-6 px-4 text-center shadow-md border-b-4 border-[#FF6B35]">
+        <h1 class="text-2xl sm:text-3xl font-bold flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-invoice text-[#FF6B35]"></i> หน้าสรุปผลการคำนวณ
+        </h1>
+        <p id="headerProjectSub" class="text-gray-300 text-sm mt-1 font-light">
+            สรุปโหลดไฟฟ้ารวมอาคารชุดที่อยู่อาศัย
+        </p>
+    </header>
+
+    <!-- คอนเทนเนอร์หลัก Main Content -->
+    <main class="max-w-5xl w-full mx-auto my-8 px-4 flex-grow">
+        <div class="bg-white rounded-2xl shadow-md p-6 sm:p-8 border border-gray-100">
+            
+            <h2 id="projectTitleHeader" class="text-xl font-semibold text-[#0F2027] mb-6 pb-2 border-b-2 border-gray-100 flex items-center gap-2">
+                <i class="fa-solid fa-building text-[#FF6B35]"></i> ชื่อโปรเจกต์
+            </h2>
+
+            <div class="space-y-6 text-gray-800">
+                
+                <!-- 1. ตารางโหลดห้องพักอาศัย -->
+                <div class="space-y-2">
+                    <h3 class="font-semibold text-lg text-[#203A43] flex items-center gap-2">
+                        <i class="fa-solid fa-door-closed text-[#FF6B35]"></i> ตารางโหลดห้องพักอาศัย
+                    </h3>
+                    <!-- รายการห้องแต่ละ TYPE สร้างจากข้อมูลที่กรอกใน condo-page-1 / calroom -->
+                    <div id="roomTypeList" class="pl-6 space-y-2">
+                        <p class="text-sm text-gray-500 italic">กำลังโหลดข้อมูล...</p>
+                    </div>
+                    <div id="roomTypeTotal" class="pl-6"></div>
+                </div>
+
+                <!-- 2. Load center ประจำชั้น -->
+                <div class="space-y-2 pt-2">
+                    <h3 class="font-semibold text-lg text-[#203A43] flex items-center gap-2">
+                        <i class="fa-solid fa-server text-[#FF6B35]"></i> ตารางโหลด Load center ประจำชั้น
+                    </h3>
+                    <!-- สร้างจากข้อมูลที่บันทึกใน Calcondo/calLoad-center.html (data.floorBoards แยกชั้น) -->
+                    <div id="floorBoardBox" class="pl-6 space-y-2"></div>
+                </div>
+
+                <!-- 3. โหลดส่วนกลาง -->
+                <div class="space-y-2 pt-2">
+                    <h3 class="font-semibold text-lg text-[#203A43] flex items-center gap-2">
+                        <i class="fa-solid fa-lightbulb text-[#FF6B35]"></i> โหลดส่วนกลาง
+                    </h3>
+                    <!-- สร้างจากข้อมูลที่บันทึกใน Calcondo/calCommon-area.html -->
+                    <div id="commonLoadBox" class="pl-6"></div>
+                </div>
+
+                <!-- 4. โหลดฉุกเฉิน -->
+                <div class="space-y-2 pt-2">
+                    <h3 class="font-semibold text-lg text-[#203A43] flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation text-[#FF6B35]"></i> โหลดฉุกเฉิน
+                    </h3>
+                    <!-- สร้างจากข้อมูลที่บันทึกใน Calcondo/calemergency.html -->
+                    <div id="emergencyLoadBox" class="pl-6"></div>
+                </div>
+
+                <!-- 5. ร้านค้า / สำนักงาน -->
+                <div class="space-y-2 pt-2">
+                    <h3 class="font-semibold text-lg text-[#203A43] flex items-center gap-2">
+                        <i class="fa-solid fa-store text-[#FF6B35]"></i> ร้านค้า / สำนักงาน
+                    </h3>
+                    <!-- สร้างจากข้อมูลที่บันทึกใน Calcondo/calshop_office1phase.html / calshop_office3phase.html -->
+                    <div id="shopOfficeList" class="pl-6 space-y-2"></div>
+                    <div id="shopOfficeTotal" class="pl-6"></div>
+                </div>
+
+            </div>
+
+            <!-- ส่วนแสดงลิงก์โปรเจกต์อื่นๆ ที่เคยทำไว้ -->
+            <div class="mt-10 pt-6 border-t border-gray-200">
+                <h4 class="text-md font-semibold text-[#203A43] mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-folder-tree text-[#FF6B35]"></i> รายชื่อโปรเจกต์ทั้งหมดที่คุณเคยทำไว้
+                </h4>
+                <div id="otherProjectsList" class="flex flex-col gap-3">
+                    <!-- รายชื่อโปรเจกต์ทั้งหมดจะแสดงที่นี่ -->
+                </div>
+            </div>
+
+            <!-- ปุ่มย้อนกลับ -->
+            <div class="mt-8 text-center border-t pt-6">
+                <a href="condo-page-1.html" class="inline-flex items-center gap-2 bg-[#203A43] hover:bg-[#FF6B35] text-white px-6 py-2.5 rounded-full font-medium transition shadow-md">
+                    <i class="fa-solid fa-arrow-left"></i> ย้อนกลับไปหน้าจัดการ
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal ป๊อปอัปตารางรายละเอียด -->
+    <div id="scheduleModal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] flex flex-col overflow-hidden">
+            
+            <div class="bg-[#0F2027] text-white p-4 px-6 flex justify-between items-center border-b-2 border-[#FF6B35]">
+                <h3 id="modalTitle" class="font-semibold text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-table-list text-[#FF6B35]"></i> ตาราง LOAD SCHEDULE
+                </h3>
+                <div class="flex items-center gap-2 no-print">
+                    <button onclick="window.print()" class="bg-[#FF6B35] hover:bg-[#E85A24] text-white text-xs px-3 py-1.5 rounded flex items-center gap-1 transition">
+                        <i class="fa-solid fa-print"></i> พิมพ์ / สั่งพิมพ์
+                    </button>
+                    <button onclick="closeModal()" class="text-gray-400 hover:text-white text-xl px-2">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div id="modalContent" class="p-6 overflow-y-auto flex-grow bg-white">
+                <div class="text-left font-semibold text-base mb-4 tracking-wide">
+                    <span id="modalHeading">ตาราง LOAD SCHEDULE OF ROOM</span> <span id="modalTypeTag" class="ml-4 font-bold text-[#FF6B35]">TYPE A</span>
+                    <div id="modalMeta" class="text-sm font-normal text-gray-600 mt-1"></div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="eng-table">
+                        <thead id="modalTableHead">
+                            <tr>
+                                <th rowspan="2" style="width: 10%;">CIRCUIT NO.</th>
+                                <th rowspan="2" style="width: 25%;">DESCRIPTION</th>
+                                <th rowspan="2" style="width: 15%;">LOAD (VA)</th>
+                                <th colspan="2" style="width: 20%;">CB.</th>
+                                <th colspan="2" style="width: 20%;">CONDUCTOR</th>
+                                <th colspan="2" style="width: 10%;">RACE WAY</th>
+                            </tr>
+                            <tr>
+                                <th>P.</th>
+                                <th>AT.</th>
+                                <th>TYPE</th>
+                                <th>SIZE</th>
+                                <th>TYPE</th>
+                                <th><span class="text-lg">Ø</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="modalTableBody">
+                            <tr>
+                                <td>1</td>
+                                <td class="text-left px-3">แสงสว่างห้องพัก</td>
+                                <td>600</td>
+                                <td>1</td>
+                                <td>10</td>
+                                <td>IEC01</td>
+                                <td>2x1.5/1.5</td>
+                                <td>PVC</td>
+                                <td>16</td>
+                            </tr>
+                            <tr>
+                                <td>2</td>
+                                <td class="text-left px-3">เต้ารับใช้งานทั่วไป</td>
+                                <td>2,000</td>
+                                <td>1</td>
+                                <td>16</td>
+                                <td>IEC01</td>
+                                <td>2x2.5/2.5</td>
+                                <td>PVC</td>
+                                <td>16</td>
+                            </tr>
+                            <tr>
+                                <td>3</td>
+                                <td class="text-left px-3">เครื่องปรับอากาศ (12,000 BTU)</td>
+                                <td>1,500</td>
+                                <td>1</td>
+                                <td>16</td>
+                                <td>IEC01</td>
+                                <td>2x2.5/2.5</td>
+                                <td>PVC</td>
+                                <td>16</td>
+                            </tr>
+                            <tr>
+                                <td>4</td>
+                                <td class="text-left px-3">เครื่องทำน้ำอุ่น (3,500W)</td>
+                                <td>3,500</td>
+                                <td>1</td>
+                                <td>20</td>
+                                <td>IEC01</td>
+                                <td>2x4/4</td>
+                                <td>PVC</td>
+                                <td>20</td>
+                            </tr>
+                            <tr class="font-bold bg-gray-50">
+                                <td colspan="2" class="text-right px-3">TOTAL LOAD (VA)</td>
+                                <td>7,600</td>
+                                <td colspan="6">MAIN CB: 1P 40A / CABLE: 2x10/10 mm²</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-4 text-xs text-gray-600 font-sans">
+                    <strong>Note:</strong> การเดินสายและติดตั้งตู้ควบคุมโหลดเป็นไปตามมาตรฐานการติดตั้งทางไฟฟ้าสำหรับประเทศไทย (EIT Standard)
+                </div>
+            </div>
+
+            <div class="bg-gray-100 p-3 px-6 flex flex-wrap items-center justify-between gap-2 border-t no-print">
+                <!-- ปุ่มแก้ไข / ลบตารางโหลดที่กำลังดู -->
+                <div id="modalActions" class="flex flex-wrap items-center gap-2"></div>
+                <button onclick="closeModal()" class="bg-gray-600 hover:bg-gray-700 text-white text-sm px-5 py-1.5 rounded transition ml-auto">
+                    ปิดหน้าต่าง
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ส่วนท้าย Footer -->
+    <footer class="bg-[#0F2027] text-gray-400 text-center py-4 text-sm mt-auto">
+        <p>&copy; ระบบคำนวณโหลดไฟฟ้าอาคารชุด</p>
+    </footer>
+
+    <script>
+        // โหลดข้อมูลโปรเจกต์ปัจจุบัน
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const queryProjectId = urlParams.get('projectId');
+            const projects = JSON.parse(localStorage.getItem('e_condo_projects') || '[]');
+
+            let currentProject = null;
+
+            if (queryProjectId) {
+                currentProject = projects.find(p => p.id === queryProjectId);
+            }
+
+            if (!currentProject) {
+                currentProject = JSON.parse(localStorage.getItem('e_condo_current_project') || '{}');
+            }
+
+            if (currentProject && currentProject.name) {
+                document.getElementById('projectTitleHeader').innerHTML = `<i class="fa-solid fa-building text-[#FF6B35]"></i> ${currentProject.name}`;
+                document.getElementById('headerProjectSub').textContent = `${currentProject.name} - สรุปโหลดไฟฟ้ารวมอาคารชุดที่อยู่อาศัย`;
+            } else {
+                document.getElementById('projectTitleHeader').innerHTML = `<i class="fa-solid fa-building text-[#FF6B35]"></i> อาคารชุดที่อยู่อาศัย`;
+            }
+
+            // เก็บตารางตัวอย่างเดิมไว้ใช้กับส่วนที่ยังไม่ได้เชื่อมข้อมูล (ตู้ชั้น/ส่วนกลาง/ฉุกเฉิน)
+            sampleTableHead = document.getElementById('modalTableHead').innerHTML;
+            sampleTableBody = document.getElementById('modalTableBody').innerHTML;
+
+            // ห้องพัก / Load center / ส่วนกลาง / ฉุกเฉิน / ร้านค้า-สำนักงาน
+            activeProject = currentProject;
+            refreshAll();
+
+            // แสดงรายการโปรเจกต์ทั้งหมดที่เคยทำไว้
+            renderAllProjectsList(projects, currentProject ? currentProject.id : null);
+        };
+
+        // ===== วาดทุกส่วนใหม่ (หลังลบข้อมูล) =====
+        let activeProject = null;
+        function refreshAll() {
+            renderRoomTypes(activeProject);
+            renderFloorBoards(activeProject);
+            renderSection('common', activeProject);
+            renderSection('emergency', activeProject);
+            renderShopOffices(activeProject);
+        }
+
+        function readProjectData() {
+            try { return JSON.parse(localStorage.getItem(`e_condo_data_${currentProjectId}`) || 'null'); } catch (e) { return null; }
+        }
+
+        function writeProjectData(data) {
+            try {
+                localStorage.setItem(`e_condo_data_${currentProjectId}`, JSON.stringify(data));
+                return true;
+            } catch (e) {
+                alert('ลบไม่สำเร็จ: ' + e.message);
+                return false;
+            }
+        }
+
+        // ===== ลบตารางโหลดจากหน้าสรุปผล =====
+        // room = ลบเฉพาะตารางโหลดห้อง (เก็บ TYPE และจำนวนห้องไว้) · roomType = ลบ TYPE ห้องทั้งหมด
+        // common / emergency = ลบตารางโหลดส่วนกลาง / ฉุกเฉิน · floor = ลบตาราง Load center ของกลุ่มชั้น
+        // shop = ลบเฉพาะตารางโหลดของร้านค้า/สำนักงาน (เก็บรายการไว้)
+        function deleteLoad(kind, idx) {
+            const data = readProjectData();
+            if (!data) { alert('ไม่พบข้อมูลโปรเจกต์'); return; }
+            const LC_NOTE = '\n\n*Load center ประจำชั้นที่บันทึกไว้แล้วจะยังเป็นค่าเดิม เปิดแล้วกดบันทึกใหม่เพื่ออัปเดต';
+
+            if (kind === 'room' || kind === 'roomType') {
+                const r = roomsData[idx];
+                const room = r && (data.rooms || []).find(x => x.type === r.type);
+                if (!room) return;
+                if (kind === 'room') {
+                    if (!confirm(`ลบตารางโหลดห้อง TYPE ${room.type} หรือไม่?\n(TYPE ห้องและจำนวนห้องยังอยู่ กรอกตารางใหม่ได้ภายหลัง)` + LC_NOTE)) return;
+                    room.loadSchedule = null;
+                    room.updatedAt = new Date().toISOString();
+                } else {
+                    if (!confirm(`ลบห้อง TYPE ${room.type} ทั้งหมด (${(room.totalRooms || 0).toLocaleString()} ห้อง) รวมตารางโหลดหรือไม่?\nลบแล้วกู้คืนไม่ได้` + LC_NOTE)) return;
+                    data.rooms = data.rooms.filter(x => x.type !== room.type);
+                }
+            } else if (kind === 'common' || kind === 'emergency') {
+                const cfg = SECTIONS[kind];
+                if (!confirm(`ลบตาราง${cfg.name}หรือไม่?\nลบแล้วกู้คืนไม่ได้`)) return;
+                data[cfg.key] = [];
+            } else if (kind === 'floor') {
+                const g = floorGroups[idx];
+                if (!g) return;
+                if (!confirm(`ลบตาราง Load center ${floorLabel(g)} หรือไม่?\nลบแล้วกู้คืนไม่ได้`)) return;
+                data.floorBoards = (Array.isArray(data.floorBoards) ? data.floorBoards : [])
+                    .filter(b => !(Number(b.floor) >= g.from && Number(b.floor) <= g.to));
+            } else if (kind === 'shop') {
+                const s = shopData[idx];
+                const unit = s && (data.shopOffices || []).find(x => x.id === s.id);
+                if (!unit) return;
+                if (!confirm(`ลบตารางโหลดของ "${unit.name}" หรือไม่?\n(รายการยังอยู่ กรอกตารางใหม่ได้ภายหลัง)`)) return;
+                unit.loadSchedule = null;
+                unit.updatedAt = new Date().toISOString();
+            } else {
+                return;
+            }
+
+            if (!writeProjectData(data)) return;
+            closeModal();
+            refreshAll();
+        }
+
+        // ===== ห้องพักอาศัยแต่ละ TYPE =====
+        const ROOM_PAGES = { 1: '../Calcondo/calroom_1_phase.html', 3: '../Calcondo/calroom_3_phase.html' };
+        let sampleTableHead = '';
+        let sampleTableBody = '';
+        let roomsData = [];
+        let currentProjectId = null;
+
+        function esc(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function dash(v) {
+            return v === '' || v == null ? '-' : esc(v);
+        }
+
+        function floorText(r) {
+            return r.from === r.to ? `ชั้น ${r.from}` : `ชั้น ${r.from}–${r.to}`;
+        }
+
+        function renderRoomTypes(project) {
+            const list = document.getElementById('roomTypeList');
+            const totalBox = document.getElementById('roomTypeTotal');
+            totalBox.innerHTML = '';
+
+            if (!project || !project.id) {
+                list.innerHTML = `<p class="text-sm text-gray-500 italic">ยังไม่ได้เลือกโปรเจกต์</p>`;
+                return;
+            }
+
+            currentProjectId = project.id;
+            let data = null;
+            try { data = JSON.parse(localStorage.getItem(`e_condo_data_${project.id}`) || 'null'); } catch (e) {}
+            roomsData = (data && Array.isArray(data.rooms) ? data.rooms : [])
+                .slice()
+                .sort((a, b) => a.type.localeCompare(b.type));
+
+            if (roomsData.length === 0) {
+                list.innerHTML = `
+                    <div class="p-4 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 flex flex-wrap items-center justify-between gap-3">
+                        <span><i class="fa-solid fa-circle-info text-[#FF6B35] mr-1"></i> ยังไม่มีห้องพักอาศัยในโปรเจกต์นี้</span>
+                        <a href="condo-page-1.html" class="text-[#FF6B35] hover:text-[#E85A24] font-medium underline underline-offset-4">ไปกำหนดห้องพักอาศัย</a>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = roomsData.map((room, idx) => {
+                const ranges = room.floorRanges || [];
+                // ถ้าทุกช่วงชั้นมีจำนวนห้องเท่ากัน แสดงเลขเดียว ไม่เช่นนั้นแสดงแยกตามช่วงชั้น
+                const counts = [...new Set(ranges.map(r => r.roomsPerFloor))];
+                const perFloor = counts.length === 1
+                    ? `<strong class="text-gray-800">${counts[0]}</strong>`
+                    : ranges.map(r => `<strong class="text-gray-800">${r.roomsPerFloor}</strong> (${floorText(r)})`).join(', ');
+                const floors = ranges.map(floorText).join(', ') || '-';
+                const hasSchedule = room.loadSchedule && Array.isArray(room.loadSchedule.circuits);
+                const editUrl = `${ROOM_PAGES[room.phase] || ROOM_PAGES[1]}?projectId=${encodeURIComponent(project.id)}&type=${encodeURIComponent(room.type)}`;
+
+                const status = hasSchedule
+                    ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                           <i class="fa-solid fa-circle-check"></i> สร้างตารางแล้ว · ${(room.loadSchedule.totalVA || 0).toLocaleString()} VA${
+                               room.loadSchedule.eit ? (room.loadSchedule.eit.method === 'area' ? ' (ตามพื้นที่ วสท.)'
+                                   : room.loadSchedule.eit.minApplied ? ' (ขั้นต่ำ วสท.)' : '') : ''}
+                       </span>`
+                    : `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                           <i class="fa-solid fa-hourglass-half"></i> ยังไม่สร้างตารางโหลด
+                       </span>`;
+
+                return `
+                    <div class="p-2.5 rounded-lg hover:bg-orange-50 transition border border-transparent hover:border-orange-200">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button onclick="openRoomModal(${idx})" class="text-[#FF6B35] hover:text-[#E85A24] font-medium text-left flex items-center gap-2 underline underline-offset-4">
+                                    <i class="fa-solid fa-arrow-right-long text-xs"></i> ตารางโหลดห้อง TYPE ${esc(room.type)}
+                                </button>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-[#203A43] text-white">${esc(room.phase)} เฟส</span>
+                                ${status}
+                            </div>
+                            <div class="text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-1">
+                                <span>จำนวนห้องต่อชั้น: ${perFloor}</span>
+                                <span>จำนวนห้องรวม: <strong class="text-gray-800">${(room.totalRooms || 0).toLocaleString()}</strong></span>
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <span><i class="fa-solid fa-layer-group mr-1"></i> ${floors}</span>
+                            <a href="${editUrl}" class="text-[#203A43] hover:text-[#FF6B35] underline underline-offset-2">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i>${hasSchedule ? 'แก้ไขตารางโหลด' : 'กรอกตารางโหลด'}
+                            </a>
+                            ${hasSchedule ? `<button type="button" onclick="deleteLoad('room', ${idx})" class="text-red-600 hover:text-red-700 underline underline-offset-2">
+                                <i class="fa-solid fa-eraser mr-1"></i>ลบตารางโหลด
+                            </button>` : ''}
+                            <button type="button" onclick="deleteLoad('roomType', ${idx})" class="text-red-600 hover:text-red-700 underline underline-offset-2">
+                                <i class="fa-solid fa-trash-can mr-1"></i>ลบ TYPE ห้อง
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            const allRooms = roomsData.reduce((s, r) => s + (r.totalRooms || 0), 0);
+            totalBox.innerHTML = `
+                <div class="flex flex-wrap justify-between gap-2 text-sm border-t border-gray-200 pt-2 mt-1 px-2.5">
+                    <span class="text-gray-600">รวมทั้งหมด ${roomsData.length} TYPE</span>
+                    <span class="text-gray-600">จำนวนห้องรวมทั้งอาคาร: <strong class="text-gray-800">${allRooms.toLocaleString()}</strong> ห้อง</span>
+                </div>`;
+        }
+
+        // ===== โหลดส่วนกลาง / โหลดฉุกเฉิน (ตู้ 3 เฟส) =====
+        const SECTIONS = {
+            common: {
+                key: 'commonLoad', boxId: 'commonLoadBox', name: 'โหลดส่วนกลาง',
+                page: '../Calcondo/calCommon-area.html', tag: 'COMMON AREA'
+            },
+            emergency: {
+                key: 'emergencyLoad', boxId: 'emergencyLoadBox', name: 'โหลดฉุกเฉิน',
+                page: '../Calcondo/calemergency.html', tag: 'EMERGENCY LOAD'
+            }
+        };
+        const sectionData = {};
+
+        function sectionUrl(kind) {
+            return `${SECTIONS[kind].page}?projectId=${encodeURIComponent(currentProjectId || '')}`;
+        }
+
+        function phaseTotalsText(ls) {
+            if (ls.totalA === undefined) return '';
+            return `A ${(ls.totalA || 0).toLocaleString()} · B ${(ls.totalB || 0).toLocaleString()} · C ${(ls.totalC || 0).toLocaleString()} VA`;
+        }
+
+        function renderSection(kind, project) {
+            const cfg = SECTIONS[kind];
+            const box = document.getElementById(cfg.boxId);
+
+            if (!project || !project.id) {
+                box.innerHTML = `<p class="text-sm text-gray-500 italic">ยังไม่ได้เลือกโปรเจกต์</p>`;
+                return;
+            }
+
+            let data = null;
+            try { data = JSON.parse(localStorage.getItem(`e_condo_data_${project.id}`) || 'null'); } catch (e) {}
+            const raw = data && data[cfg.key];
+            // ข้อมูลตั้งต้นจาก index.html เป็น [] = ยังไม่ได้กรอก
+            const ls = raw && !Array.isArray(raw) && Array.isArray(raw.circuits) ? raw : null;
+            sectionData[kind] = ls;
+
+            const status = ls
+                ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                       <i class="fa-solid fa-circle-check"></i> สร้างตารางแล้ว · ${(ls.totalVA || 0).toLocaleString()} VA
+                   </span>`
+                : `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                       <i class="fa-solid fa-hourglass-half"></i> ยังไม่สร้างตารางโหลด
+                   </span>`;
+
+            box.innerHTML = `
+                <div class="p-2.5 rounded-lg hover:bg-orange-50 transition border border-transparent hover:border-orange-200">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <div class="flex flex-wrap items-center gap-3">
+                            <button onclick="openSectionModal('${kind}')" class="text-[#FF6B35] hover:text-[#E85A24] font-medium text-left flex items-center gap-2 underline underline-offset-4">
+                                <i class="fa-solid fa-arrow-right-long text-xs"></i> ตาราง${cfg.name}
+                            </button>
+                            <span class="text-xs px-2 py-0.5 rounded-full bg-[#203A43] text-white">3 เฟส</span>
+                            ${status}
+                        </div>
+                        <div class="text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-1">
+                            ${ls ? `<span>จำนวนวงจร: <strong class="text-gray-800">${ls.circuits.length}</strong></span>
+                                    <span>${phaseTotalsText(ls)}</span>` : ''}
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                        <a href="${sectionUrl(kind)}" class="text-[#203A43] hover:text-[#FF6B35] underline underline-offset-2">
+                            <i class="fa-solid fa-pen-to-square mr-1"></i>${ls ? 'แก้ไขตารางโหลด' : 'กรอกตารางโหลด'}
+                        </a>
+                        ${ls ? `<button type="button" onclick="deleteLoad('${kind}')" class="text-red-600 hover:text-red-700 underline underline-offset-2">
+                            <i class="fa-solid fa-trash-can mr-1"></i>ลบตารางโหลด
+                        </button>` : ''}
+                    </div>
+                </div>`;
+        }
+
+        function openSectionModal(kind) {
+            const cfg = SECTIONS[kind];
+            const ls = sectionData[kind];
+            showScheduleModal({
+                title: `ตาราง${cfg.name} (3 เฟส)`,
+                heading: 'ตาราง LOAD SCHEDULE',
+                tag: cfg.tag,
+                meta: ls ? `ระบบไฟ 3 เฟส · ${ls.circuits.length} วงจร` : '',
+                ls: ls,
+                threePhase: true,
+                editUrl: sectionUrl(kind),
+                deleteAction: `deleteLoad('${kind}')`,
+                emptyText: `${cfg.name}ยังไม่ได้สร้างตารางโหลด`
+            });
+        }
+
+        // ===== Load center ประจำชั้น (Calcondo/calLoad-center.html) =====
+        const FLOOR_PAGE = '../Calcondo/calLoad-center.html';
+        let floorGroups = [];
+
+        function floorBoardUrl(floor) {
+            const q = new URLSearchParams();
+            if (currentProjectId) q.set('projectId', currentProjectId);
+            if (floor) q.set('floor', floor);
+            const qs = q.toString();
+            return qs ? `${FLOOR_PAGE}?${qs}` : FLOOR_PAGE;
+        }
+
+        // จำนวนห้องแต่ละ TYPE ในชั้น f เช่น { A: 6, B: 2 }
+        function roomCountOnFloor(rooms, f) {
+            const counts = {};
+            rooms.forEach(room => (room.floorRanges || []).forEach(r => {
+                if (f >= Number(r.from) && f <= Number(r.to)) {
+                    counts[room.type] = (counts[room.type] || 0) + (parseInt(r.roomsPerFloor, 10) || 0);
+                }
+            }));
+            return counts;
+        }
+
+        function floorLabel(g) {
+            return g.from === g.to ? `ชั้นที่ ${g.from}` : `ชั้นที่ ${g.from}–${g.to}`;
+        }
+
+        function renderFloorBoards(project) {
+            const box = document.getElementById('floorBoardBox');
+
+            if (!project || !project.id) {
+                box.innerHTML = `<p class="text-sm text-gray-500 italic">ยังไม่ได้เลือกโปรเจกต์</p>`;
+                return;
+            }
+
+            let data = null;
+            try { data = JSON.parse(localStorage.getItem(`e_condo_data_${project.id}`) || 'null'); } catch (e) {}
+            const rooms = data && Array.isArray(data.rooms) ? data.rooms : [];
+            const boards = (data && Array.isArray(data.floorBoards) ? data.floorBoards : [])
+                .filter(b => b && Array.isArray(b.circuits));
+
+            let n = parseInt((data && data.projectInfo && data.projectInfo.floors) || project.floors, 10) || 0;
+            rooms.forEach(r => (r.floorRanges || []).forEach(fr => { n = Math.max(n, parseInt(fr.to, 10) || 0); }));
+
+            if (!n) {
+                box.innerHTML = `<p class="text-sm text-gray-500 italic">ยังไม่มีข้อมูลจำนวนชั้นของโปรเจกต์นี้</p>`;
+                return;
+            }
+
+            // รวมชั้นติดกันที่มีห้องเหมือนกันและตารางเหมือนกันเป็นกลุ่มเดียว (เช่น ชั้นที่ 2–8)
+            floorGroups = [];
+            for (let f = 1; f <= n; f++) {
+                const counts = roomCountOnFloor(rooms, f);
+                const sig = Object.keys(counts).sort().map(t => `${t}x${counts[t]}`).join(',');
+                const ls = boards.find(b => Number(b.floor) === f) || null;
+                const lsSig = ls ? JSON.stringify(ls.circuits.map(c => [c.no, c.description, c.loadVA, c.cbAT, c.conductorSize])) + '|' + JSON.stringify(ls.main || {}) : '';
+                const key = sig + '#' + lsSig;
+                const last = floorGroups[floorGroups.length - 1];
+                if (last && last.key === key && last.to === f - 1) {
+                    last.to = f;
+                } else {
+                    floorGroups.push({ key, from: f, to: f, counts, ls });
+                }
+            }
+
+            box.innerHTML = floorGroups.map((g, idx) => {
+                const types = Object.keys(g.counts).sort();
+                const roomTotal = types.reduce((s, t) => s + g.counts[t], 0);
+                const roomText = roomTotal
+                    ? `ห้องพัก <strong class="text-gray-800">${roomTotal}</strong> ห้อง/ชั้น (${types.map(t => `TYPE ${esc(t)} × ${g.counts[t]}`).join(', ')})`
+                    : 'ไม่มีห้องพักอาศัย';
+                const status = g.ls
+                    ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                           <i class="fa-solid fa-circle-check"></i> สร้างตารางแล้ว · ${(g.ls.totalVA || 0).toLocaleString()} VA
+                       </span>`
+                    : `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                           <i class="fa-solid fa-hourglass-half"></i> ยังไม่สร้างตารางโหลด
+                       </span>`;
+                return `
+                    <div class="p-2.5 rounded-lg hover:bg-orange-50 transition border border-transparent hover:border-orange-200">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button onclick="openFloorModal(${idx})" class="text-[#FF6B35] hover:text-[#E85A24] font-medium text-left flex items-center gap-2 underline underline-offset-4">
+                                    <i class="fa-solid fa-arrow-right-long text-xs"></i> Load center ${floorLabel(g)}
+                                </button>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-[#203A43] text-white">3 เฟส</span>
+                                ${status}
+                            </div>
+                            <div class="text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-1">
+                                ${g.ls ? `<span>จำนวนวงจร: <strong class="text-gray-800">${g.ls.circuits.length}</strong></span>
+                                          <span>${phaseTotalsText(g.ls)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <span><i class="fa-solid fa-door-closed mr-1"></i> ${roomText}</span>
+                            <a href="${floorBoardUrl(g.from)}" class="text-[#203A43] hover:text-[#FF6B35] underline underline-offset-2">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i>${g.ls ? 'แก้ไขตารางโหลด' : 'กรอกตารางโหลด'}
+                            </a>
+                            ${g.ls ? `<button type="button" onclick="deleteLoad('floor', ${idx})" class="text-red-600 hover:text-red-700 underline underline-offset-2">
+                                <i class="fa-solid fa-trash-can mr-1"></i>ลบตารางโหลด
+                            </button>` : ''}
+                        </div>
+                    </div>`;
+            }).join('');
+        }
+
+        function openFloorModal(idx) {
+            const g = floorGroups[idx];
+            if (!g) return;
+            const label = floorLabel(g);
+            const roomCircuits = g.ls ? g.ls.circuits.filter(c => c.source === 'room').length : 0;
+            showScheduleModal({
+                title: `ตารางโหลด Load center ${label} (3 เฟส)`,
+                heading: 'ตาราง LOAD SCHEDULE OF LOAD CENTER',
+                tag: g.from === g.to ? `FLOOR ${g.from}` : `FLOOR ${g.from}-${g.to}`,
+                meta: g.ls ? `ระบบไฟ 3 เฟส · ${g.ls.circuits.length} วงจร (ห้องพัก ${roomCircuits} วงจร) · ตารางเดียวกันทุกชั้นในกลุ่มนี้` : '',
+                ls: g.ls,
+                threePhase: true,
+                editUrl: floorBoardUrl(g.from),
+                deleteAction: `deleteLoad('floor', ${idx})`,
+                emptyText: `Load center ${label} ยังไม่ได้สร้างตารางโหลด`
+            });
+        }
+
+        // ===== ร้านค้า / สำนักงาน (data.shopOffices) =====
+        const SHOP_PAGES = { 1: '../Calcondo/calshop_office1phase.html', 3: '../Calcondo/calshop_office3phase.html' };
+        const KIND_NAMES = { shop: 'ร้านค้า', office: 'สำนักงาน' };
+        let shopData = [];
+
+        function shopUrl(u) {
+            return `${SHOP_PAGES[u.phase] || SHOP_PAGES[1]}?projectId=${encodeURIComponent(currentProjectId || '')}&unit=${encodeURIComponent(u.id)}`;
+        }
+
+        function renderShopOffices(project) {
+            const list = document.getElementById('shopOfficeList');
+            const totalBox = document.getElementById('shopOfficeTotal');
+            totalBox.innerHTML = '';
+
+            if (!project || !project.id) {
+                list.innerHTML = `<p class="text-sm text-gray-500 italic">ยังไม่ได้เลือกโปรเจกต์</p>`;
+                return;
+            }
+
+            let data = null;
+            try { data = JSON.parse(localStorage.getItem(`e_condo_data_${project.id}`) || 'null'); } catch (e) {}
+            shopData = (data && Array.isArray(data.shopOffices) ? data.shopOffices : [])
+                .slice()
+                .sort((a, b) => (a.floor - b.floor) || a.name.localeCompare(b.name, 'th', { numeric: true }));
+
+            if (shopData.length === 0) {
+                list.innerHTML = `
+                    <div class="p-4 rounded-lg border border-dashed border-gray-300 text-sm text-gray-600 flex flex-wrap items-center justify-between gap-3">
+                        <span><i class="fa-solid fa-circle-info text-[#FF6B35] mr-1"></i> ยังไม่มีร้านค้า / สำนักงานในโปรเจกต์นี้</span>
+                        <a href="condo-page-1.html" class="text-[#FF6B35] hover:text-[#E85A24] font-medium underline underline-offset-4">ไปกำหนดร้านค้า / สำนักงาน</a>
+                    </div>`;
+                return;
+            }
+
+            list.innerHTML = shopData.map((u, idx) => {
+                const ls = u.loadSchedule && Array.isArray(u.loadSchedule.circuits) ? u.loadSchedule : null;
+                const status = ls
+                    ? `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200">
+                           <i class="fa-solid fa-circle-check"></i> สร้างตารางแล้ว · ${(ls.totalVA || 0).toLocaleString()} VA
+                       </span>`
+                    : `<span class="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                           <i class="fa-solid fa-hourglass-half"></i> ยังไม่สร้างตารางโหลด
+                       </span>`;
+                return `
+                    <div class="p-2.5 rounded-lg hover:bg-orange-50 transition border border-transparent hover:border-orange-200">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex flex-wrap items-center gap-3">
+                                <button onclick="openShopModal(${idx})" class="text-[#FF6B35] hover:text-[#E85A24] font-medium text-left flex items-center gap-2 underline underline-offset-4">
+                                    <i class="fa-solid fa-arrow-right-long text-xs"></i> ตารางโหลด ${esc(u.name)}
+                                </button>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700 border border-gray-200">${KIND_NAMES[u.kind] || 'ร้านค้า'}</span>
+                                <span class="text-xs px-2 py-0.5 rounded-full bg-[#203A43] text-white">${esc(u.phase)} เฟส</span>
+                                ${status}
+                            </div>
+                            <div class="text-sm text-gray-600 flex flex-wrap gap-x-6 gap-y-1">
+                                ${ls ? `<span>จำนวนวงจร: <strong class="text-gray-800">${ls.circuits.length}</strong></span>` : ''}
+                                ${ls && Number(u.phase) === 3 ? `<span>${phaseTotalsText(ls)}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="text-xs text-gray-500 mt-1 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <span><i class="fa-solid fa-layer-group mr-1"></i> ชั้น ${esc(u.floor)}</span>
+                            <a href="${shopUrl(u)}" class="text-[#203A43] hover:text-[#FF6B35] underline underline-offset-2">
+                                <i class="fa-solid fa-pen-to-square mr-1"></i>${ls ? 'แก้ไขตารางโหลด' : 'กรอกตารางโหลด'}
+                            </a>
+                            ${ls ? `<button type="button" onclick="deleteLoad('shop', ${idx})" class="text-red-600 hover:text-red-700 underline underline-offset-2">
+                                <i class="fa-solid fa-eraser mr-1"></i>ลบตารางโหลด
+                            </button>` : ''}
+                            <button type="button" onclick="deleteShopOffice(${idx})" class="text-red-600 hover:text-red-700 underline underline-offset-2">
+                                <i class="fa-solid fa-trash-can mr-1"></i>ลบรายการ
+                            </button>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            const total = shopData.reduce((sum, u) => sum + (u.loadSchedule ? (u.loadSchedule.totalVA || 0) : 0), 0);
+            const done = shopData.filter(u => u.loadSchedule).length;
+            totalBox.innerHTML = `
+                <div class="flex flex-wrap justify-between gap-2 text-sm border-t border-gray-200 pt-2 mt-1 px-2.5">
+                    <span class="text-gray-600">รวมทั้งหมด ${shopData.length} รายการ (สร้างตารางแล้ว ${done})</span>
+                    <span class="text-gray-600">โหลดรวม: <strong class="text-gray-800">${total.toLocaleString()}</strong> VA</span>
+                </div>`;
+        }
+
+        function openShopModal(idx) {
+            const u = shopData[idx];
+            if (!u) return;
+            showScheduleModal({
+                title: `ตารางโหลด ${esc(u.name)} (${esc(u.phase)} เฟส)`,
+                heading: `ตาราง LOAD SCHEDULE OF ${u.kind === 'office' ? 'OFFICE' : 'SHOP'}`,
+                tag: u.name,
+                meta: `${KIND_NAMES[u.kind] || 'ร้านค้า'} · ชั้น ${u.floor} · ระบบไฟ ${u.phase} เฟส`,
+                ls: u.loadSchedule,
+                threePhase: Number(u.phase) === 3,
+                editUrl: shopUrl(u),
+                deleteAction: `deleteLoad('shop', ${idx})`,
+                emptyText: `${esc(u.name)} ยังไม่ได้สร้างตารางโหลด`
+            });
+        }
+
+        function deleteShopOffice(idx) {
+            const u = shopData[idx];
+            if (!u || !confirm(`ต้องการลบ "${u.name}" และตารางโหลดของรายการนี้หรือไม่?`)) return;
+            const key = `e_condo_data_${currentProjectId}`;
+            let data = null;
+            try { data = JSON.parse(localStorage.getItem(key) || 'null'); } catch (e) {}
+            if (!data || !Array.isArray(data.shopOffices)) return;
+            data.shopOffices = data.shopOffices.filter(x => x.id !== u.id);
+            if (!writeProjectData(data)) return;
+            closeModal();
+            refreshAll();
+        }
+
+        // เปิด modal ตารางโหลดของห้อง TYPE ที่เลือก
+        function openRoomModal(idx) {
+            const room = roomsData[idx];
+            if (!room) return;
+            const threePhase = Number(room.phase) === 3;
+
+            showScheduleModal({
+                title: `ตารางโหลดห้อง TYPE ${esc(room.type)} (${esc(room.phase)} เฟส)`,
+                heading: 'ตาราง LOAD SCHEDULE OF ROOM',
+                tag: `TYPE ${room.type}`,
+                meta: `ระบบไฟ ${room.phase} เฟส · ${(room.floorRanges || []).map(r => `${floorText(r)} (${r.roomsPerFloor} ห้อง/ชั้น)`).join(', ')} · รวม ${(room.totalRooms || 0).toLocaleString()} ห้อง`
+                    + (eitText(room.loadSchedule) ? ` · ${eitText(room.loadSchedule)}` : ''),
+                ls: room.loadSchedule,
+                threePhase: threePhase,
+                editUrl: `${ROOM_PAGES[room.phase] || ROOM_PAGES[1]}?projectId=${encodeURIComponent(currentProjectId)}&type=${encodeURIComponent(room.type)}`,
+                deleteAction: `deleteLoad('room', ${idx})`,
+                emptyText: `ห้อง TYPE ${esc(room.type)} ยังไม่ได้สร้างตารางโหลด`
+            });
+        }
+
+
+        // ===== เกณฑ์โหลดห้องชุดตามพื้นที่ (วสท.) =====
+        function eitText(ls) {
+            const e = ls && ls.eit;
+            if (!e) return '';
+            const cool = e.centralCooling ? 'มี' : 'ไม่มี';
+            const base = `พื้นที่ ${Number(e.area).toLocaleString()} m² · ${cool}ระบบทำความเย็นจากส่วนกลาง`;
+            return e.method === 'area'
+                ? `คำนวณตามพื้นที่ (วสท.) · ${base}`
+                : `คำนวณตามวงจรย่อย · ${base} · ขั้นต่ำ วสท. ${(e.minVA || 0).toLocaleString()} VA`;
+        }
+
+        // แถวเพิ่มเติมก่อน TOTAL: โหลดตามพื้นที่ / ผลรวมวงจรย่อยที่ต่ำกว่าเกณฑ์
+        function eitRows(ls, cols, three) {
+            const e = ls && ls.eit;
+            if (!e) return '';
+            if (e.method === 'area') {
+                const ph = three ? ['A', 'B', 'C'].map(p => {
+                    const v = ls['total' + p];
+                    return `<td class="num">${v ? v.toLocaleString() : '-'}</td>`;
+                }).join('') : '';
+                return `
+                    <tr>
+                        <td>-</td>
+                        <td class="text-left px-3">โหลดตามพื้นที่ วสท. (${e.k} × ${Number(e.area).toLocaleString()} m² + ${(e.c || 0).toLocaleString()})</td>
+                        <td class="num">${(ls.totalVA || 0).toLocaleString()}</td>
+                        ${ph}
+                        <td colspan="7">-</td>
+                    </tr>`;
+            }
+            if (e.minApplied) {
+                return `
+                    <tr class="text-gray-600">
+                        <td colspan="2" class="text-right px-3">ผลรวมวงจรย่อย (ต่ำกว่าขั้นต่ำ วสท. → ใช้ ${(e.minVA || 0).toLocaleString()} VA)</td>
+                        <td class="num">${(e.circuitVA || 0).toLocaleString()}</td>
+                        <td colspan="${cols - 3}"></td>
+                    </tr>`;
+            }
+            return '';
+        }
+
+        // ===== ตาราง LOAD SCHEDULE ใน modal: 1 เฟส หรือ 3 เฟส (มี A/B/C) =====
+        function phaseCell(c, ph) {
+            const v = c['load' + ph];
+            const on = (c.phase || '').includes(ph) && v > 0;
+            return `<td class="num ph${on ? ' on' : ''}">${on ? v.toLocaleString() : ''}</td>`;
+        }
+
+        function showScheduleModal(opt) {
+            const ls = opt.ls;
+            const three = opt.threePhase;
+            const cols = three ? 13 : 10;
+
+            document.getElementById('modalTitle').innerHTML =
+                `<i class="fa-solid fa-table-list text-[#FF6B35]"></i> ${opt.title}`;
+            document.getElementById('modalHeading').textContent = opt.heading;
+            document.getElementById('modalTypeTag').textContent = opt.tag;
+            document.getElementById('modalMeta').textContent = opt.meta || '';
+
+            document.getElementById('modalTableHead').innerHTML = `
+                <tr>
+                    <th rowspan="2">CIRCUIT NO.</th>
+                    <th rowspan="2">DESCRIPTION</th>
+                    <th rowspan="2">LOAD (VA)</th>
+                    ${three ? '<th colspan="3">LOAD PER PHASE (VA)</th>' : ''}
+                    <th colspan="3">CB.</th>
+                    <th colspan="2">CONDUCTOR</th>
+                    <th colspan="2">RACE WAY</th>
+                </tr>
+                <tr>
+                    ${three ? '<th class="ph-A">A</th><th class="ph-B">B</th><th class="ph-C">C</th>' : ''}
+                    <th>TYPE</th>
+                    <th>P.</th>
+                    <th>AT.</th>
+                    <th>TYPE</th>
+                    <th>SIZE</th>
+                    <th>TYPE</th>
+                    <th><span class="text-lg">Ø</span></th>
+                </tr>`;
+
+            const body = document.getElementById('modalTableBody');
+
+            if (!ls || !Array.isArray(ls.circuits)) {
+                body.innerHTML = `
+                    <tr>
+                        <td colspan="${cols}" class="py-8 text-gray-600">
+                            <i class="fa-solid fa-hourglass-half text-amber-600 mr-1"></i>
+                            ${opt.emptyText} —
+                            <a href="${opt.editUrl}" class="text-[#FF6B35] underline underline-offset-4">ไปกรอกตารางโหลด</a>
+                        </td>
+                    </tr>`;
+            } else {
+                const m = ls.main || {};
+                let prevGroup = null;
+                body.innerHTML = ls.circuits.map(c => {
+                    // เส้นคั่นก่อนวงจรเลขคู่แถวแรก
+                    const groupStart = three && c.group === 'even' && prevGroup === 'odd';
+                    prevGroup = c.group || prevGroup;
+                    return `
+                    <tr${groupStart ? ' class="group-start"' : ''}>
+                        <td class="font-semibold">${esc(c.no)}</td>
+                        <td class="text-left px-3">${dash(c.description)}</td>
+                        <td class="num">${c.loadVA ? c.loadVA.toLocaleString() : '-'}</td>
+                        ${three ? ['A', 'B', 'C'].map(ph => phaseCell(c, ph)).join('') : ''}
+                        <td>${dash(c.cbType)}</td>
+                        <td>${dash(c.cbPole)}</td>
+                        <td>${dash(c.cbAT)}</td>
+                        <td>${dash(c.conductorType)}</td>
+                        <td>${dash(c.conductorSize)}</td>
+                        <td>${dash(c.racewayType)}</td>
+                        <td>${dash(c.racewaySize)}</td>
+                    </tr>`;
+                }).join('') + eitRows(ls, cols, three) + `
+                    <tr class="font-bold bg-gray-50">
+                        <td colspan="2" class="text-right px-3">TOTAL LOAD (VA)</td>
+                        <td class="num">${(ls.totalVA || 0).toLocaleString()}</td>
+                        ${three ? ['A', 'B', 'C'].map(ph => {
+                            const v = ls['total' + ph];
+                            return `<td class="num">${v === undefined ? '-' : v.toLocaleString()}</td>`;
+                        }).join('') : ''}
+                        <td>${dash(m.cbType)}</td>
+                        <td>${dash(m.cbPole)}</td>
+                        <td>${dash(m.cbAT)}</td>
+                        <td>${dash(m.conductorType)}</td>
+                        <td>${dash(m.conductorSize)}</td>
+                        <td>${dash(m.racewayType)}</td>
+                        <td>${dash(m.racewaySize)}</td>
+                    </tr>`;
+            }
+
+            // ปุ่มแก้ไข / ลบ ด้านล่าง modal
+            const hasLs = ls && Array.isArray(ls.circuits);
+            document.getElementById('modalActions').innerHTML = (opt.editUrl ? `
+                <a href="${opt.editUrl}" class="inline-flex items-center gap-1.5 bg-[#203A43] hover:bg-[#FF6B35] text-white text-sm px-4 py-1.5 rounded transition">
+                    <i class="fa-solid fa-pen-to-square"></i> ${hasLs ? 'แก้ไขตารางโหลด' : 'กรอกตารางโหลด'}
+                </a>` : '') + (hasLs && opt.deleteAction ? `
+                <button type="button" onclick="${opt.deleteAction}" class="inline-flex items-center gap-1.5 bg-white border border-red-300 text-red-600 hover:bg-red-50 text-sm px-4 py-1.5 rounded transition">
+                    <i class="fa-solid fa-trash-can"></i> ลบตารางโหลด
+                </button>` : '');
+
+            document.getElementById('scheduleModal').classList.remove('hidden');
+        }
+
+        function renderAllProjectsList(projects, activeId) {
+            const container = document.getElementById('otherProjectsList');
+            container.innerHTML = '';
+
+            if (projects.length === 0) {
+                container.innerHTML = `<p class="text-sm text-gray-500 italic">ไม่มีข้อมูลโปรเจกต์</p>`;
+                return;
+            }
+
+            projects.forEach(p => {
+                const isActive = p.id === activeId;
+                const link = document.createElement('a');
+                link.href = `condo-page-2.html?projectId=${p.id}`;
+                link.className = `p-3 rounded-lg border flex items-center justify-between text-sm font-medium transition ${
+                    isActive 
+                    ? 'border-[#FF6B35] bg-orange-50 text-[#FF6B35]' 
+                    : 'border-gray-200 bg-white text-gray-700 hover:border-orange-300 hover:bg-gray-50'
+                }`;
+                link.innerHTML = `
+                    <span><i class="fa-solid fa-folder-open mr-2 text-[#FF6B35]"></i> ${p.name} ${isActive ? '(กำลังดูอยู่)' : ''}</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                `;
+                container.appendChild(link);
+            });
+        }
+
+        // ใช้กับส่วนที่ยังไม่ได้เชื่อมข้อมูลจริง (ยังแสดงตารางตัวอย่างเดิม)
+        function openModal(title, typeTag) {
+            document.getElementById('modalTitle').innerHTML = `<i class="fa-solid fa-table-list text-[#FF6B35]"></i> ${title}`;
+            document.getElementById('modalHeading').textContent = 'ตาราง LOAD SCHEDULE';
+            document.getElementById('modalTypeTag').textContent = typeTag;
+            document.getElementById('modalMeta').textContent = '';
+            document.getElementById('modalTableHead').innerHTML = sampleTableHead;
+            document.getElementById('modalTableBody').innerHTML = sampleTableBody;
+            document.getElementById('modalActions').innerHTML = '';
+            document.getElementById('scheduleModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('scheduleModal').classList.add('hidden');
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('scheduleModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+    </script>
+
+</body>
+</html>

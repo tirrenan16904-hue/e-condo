@@ -1,0 +1,1413 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>อาคารชุดที่อยู่อาศัย</title>
+    <!-- โหลดฟอนต์ Prompt จาก Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <!-- ไอคอน Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-navy: #0F2027;
+            --secondary-navy: #203A43;
+            --accent-orange: #FF6B35;
+            --hover-orange: #E85A24;
+            --bg-light: #F4F7F9;
+            --card-bg: #FFFFFF;
+            --text-dark: #2C3E50;
+            --text-light: #6C7A89;
+            --border: #E2E8F0;
+            --danger-red: #C53030;
+            --danger-bg: #FFF5F5;
+            --info-bg: #FFF5F2;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Prompt', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Header / Navbar */
+        header {
+            background: linear-gradient(135deg, var(--primary-navy), var(--secondary-navy));
+            color: white;
+            padding: 2.5rem 1rem;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+            border-bottom: 4px solid var(--accent-orange);
+        }
+
+        header h1 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-weight: 300;
+            opacity: 0.85;
+            font-size: 1rem;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1000px;
+            margin: 3rem auto;
+            padding: 0 1.5rem;
+            width: 100%;
+        }
+
+        /* Grid Layout */
+        .menu-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .menu-grid > .card-link {
+            flex: 0 1 290px;           /* 3 ใบต่อแถวบนจอกว้าง แถวที่เหลืออยู่กึ่งกลาง */
+            min-width: 240px;
+        }
+
+        /* Card Link Buttons */
+        .card-link {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 2rem 1.5rem;
+            text-decoration: none;
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            border-top: 4px solid transparent;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .card-link i {
+            font-size: 2.8rem;
+            color: var(--accent-orange);
+            margin-bottom: 1rem;
+            transition: transform 0.3s ease;
+        }
+
+        .card-link span {
+            font-size: 1.15rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .card-link:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 107, 53, 0.2);
+            border-top-color: var(--accent-orange);
+        }
+
+        .card-link:hover i {
+            transform: scale(1.15);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            padding: 1rem;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-box {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            max-width: 450px;
+            width: 100%;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .modal-box h3 {
+            font-size: 1.4rem;
+            color: var(--primary-navy);
+            margin-bottom: 0.5rem;
+        }
+
+        .modal-box p.subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .btn {
+            padding: 0.9rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            text-decoration: none;
+        }
+
+        .btn:focus-visible,
+        .field:focus-visible,
+        .icon-btn:focus-visible,
+        .btn-add-range:focus-visible {
+            outline: 3px solid var(--accent-orange);
+            outline-offset: 2px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-orange);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-orange);
+        }
+
+        .btn-primary:disabled {
+            background-color: #CBD5E0;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background-color: var(--secondary-navy);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-cancel {
+            background-color: #6C7A89;
+            color: white;
+            margin-top: 0.5rem;
+        }
+
+        .btn-cancel:hover {
+            background-color: #5A6673;
+        }
+
+        /* ===== Modal กำหนดห้อง (ส่วนผู้ใช้กำหนด) ===== */
+        .modal-box.wide {
+            max-width: 620px;
+            max-height: 92vh;
+            overflow-y: auto;
+            text-align: left;
+            padding: 0;
+        }
+
+        .room-head {
+            background: linear-gradient(135deg, var(--primary-navy), var(--secondary-navy));
+            color: white;
+            padding: 1.25rem 1.75rem;
+            border-bottom: 3px solid var(--accent-orange);
+            border-radius: 16px 16px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .room-head h3 {
+            color: white;
+            font-size: 1.25rem;
+            margin-bottom: 0.35rem;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .phase-chip {
+            background: var(--accent-orange);
+            color: white;
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 0.15rem 0.7rem;
+            border-radius: 999px;
+        }
+
+        .room-head .meta {
+            font-size: 0.85rem;
+            font-weight: 300;
+            opacity: 0.9;
+        }
+
+        .room-body {
+            padding: 1.5rem 1.75rem 1.75rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.4rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            margin-bottom: 0.4rem;
+        }
+
+        .form-help {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 0.35rem;
+        }
+
+        .field {
+            width: 100%;
+            padding: 0.6rem 0.75rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            background: white;
+            color: var(--text-dark);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .field:focus {
+            border-color: var(--accent-orange);
+        }
+
+        .field[aria-invalid="true"] {
+            border-color: var(--danger-red);
+            background: var(--danger-bg);
+        }
+
+        input.field {
+            font-variant-numeric: tabular-nums;
+            text-align: right;
+        }
+
+        input.field.text-field { text-align: left; }
+
+        .notice {
+            display: none;
+            gap: 0.6rem;
+            align-items: flex-start;
+            font-size: 0.85rem;
+            padding: 0.7rem 0.9rem;
+            border-radius: 8px;
+            margin-top: 0.6rem;
+            line-height: 1.5;
+        }
+
+        .notice.show {
+            display: flex;
+        }
+
+        .notice.info {
+            background: var(--info-bg);
+            border: 1px solid #FFD2BF;
+            color: #9C3D14;
+        }
+
+        .notice.error {
+            background: var(--danger-bg);
+            border: 1px solid #FEB2B2;
+            color: var(--danger-red);
+        }
+
+        .notice ul {
+            padding-left: 1.1rem;
+        }
+
+        /* แถวช่วงชั้น */
+        .range-head,
+        .range-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1.25fr 40px;
+            gap: 0.6rem;
+            align-items: center;
+        }
+
+        .range-head {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 0.35rem;
+            padding: 0 0.1rem;
+        }
+
+        .range-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .unit-wrap {
+            position: relative;
+        }
+
+        .unit-wrap input.field {
+            padding-right: 4.8rem;
+        }
+
+        .unit-wrap .unit {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8rem;
+            color: var(--text-light);
+            pointer-events: none;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .icon-btn:hover:not(:disabled) {
+            background: #FED7D7;
+            color: var(--danger-red);
+        }
+
+        .icon-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .range-sub {
+            grid-column: 1 / -1;
+            font-size: 0.78rem;
+            color: var(--text-light);
+            margin-top: -0.25rem;
+            padding-left: 0.1rem;
+        }
+
+        .btn-add-range {
+            margin-top: 0.75rem;
+            background: none;
+            border: 2px dashed #CBD5E0;
+            color: var(--secondary-navy);
+            border-radius: 8px;
+            padding: 0.6rem;
+            width: 100%;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add-range:hover {
+            border-color: var(--accent-orange);
+            color: var(--accent-orange);
+            background: var(--info-bg);
+        }
+
+        .summary-box {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.4rem;
+        }
+
+        .summary-box > div {
+            padding: 0.75rem 0.5rem;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+
+        .summary-box > div:last-child {
+            border-right: none;
+        }
+
+        .summary-box .label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+        }
+
+        .summary-box .value {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-navy);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .summary-box .value small {
+            font-size: 0.75rem;
+            font-weight: 400;
+            color: var(--text-light);
+        }
+
+        .room-actions {
+            display: flex;
+            gap: 0.7rem;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .room-actions .btn {
+            padding: 0.75rem 1.2rem;
+            font-size: 0.95rem;
+        }
+
+        .room-actions .btn-cancel {
+            margin-top: 0;
+        }
+
+        .room-actions .right {
+            display: flex;
+            gap: 0.7rem;
+            margin-left: auto;
+        }
+
+        .empty-project {
+            text-align: center;
+            padding: 1rem 0 0.5rem;
+        }
+
+        .empty-project p {
+            color: var(--text-light);
+            margin: 0.75rem 0 1.25rem;
+        }
+
+        /* Back to Home Button */
+        .btn-back-container {
+            text-align: center;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background-color: var(--secondary-navy);
+            color: #ffffff;
+            padding: 0.8rem 2rem;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(15, 32, 39, 0.2);
+        }
+
+        .btn-back:hover {
+            background-color: var(--accent-orange);
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 1.5rem;
+            background-color: var(--primary-navy);
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 1.6rem;
+            }
+            .container {
+                margin: 1.5rem auto;
+            }
+            .room-body {
+                padding: 1.25rem 1rem 1.5rem;
+            }
+            .room-head {
+                padding: 1rem;
+            }
+            .range-head {
+                display: none;
+            }
+            .range-row {
+                grid-template-columns: 1fr 1fr 40px;
+                padding: 0.75rem;
+                border: 1px solid var(--border);
+                border-radius: 10px;
+            }
+            .range-row .rooms-cell {
+                grid-column: 1 / 3;
+                grid-row: 2;
+            }
+            .range-row .mobile-label {
+                display: block;
+            }
+            .room-actions .right {
+                width: 100%;
+                margin-left: 0;
+            }
+            .room-actions .right .btn {
+                flex: 1;
+            }
+            .room-actions > .btn {
+                width: 100%;
+            }
+        }
+
+        .mobile-label {
+            display: none;
+            font-size: 0.75rem;
+            color: var(--text-light);
+            margin-bottom: 0.2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1><i class="fa-solid fa-building-user"></i> อาคารชุดที่อยู่อาศัย</h1>
+        <p>ระบบคำนวณและจัดการระบบไฟฟ้าสำหรับคอนโดมิเนียม</p>
+    </header>
+
+    <div class="container">
+        <div class="menu-grid">
+            <!-- ปุ่มห้องพักอาศัย (รวม 1 เฟส และ 3 เฟส) -->
+            <div onclick="openPhaseModal()" class="card-link">
+                <i class="fa-solid fa-bed"></i>
+                <span>ห้องพักอาศัย</span>
+            </div>
+
+            <!-- ปุ่มร้านค้า / สำนักงาน (1 เฟส หรือ 3 เฟส) -->
+            <div onclick="openPhaseModal('shop')" class="card-link">
+                <i class="fa-solid fa-store"></i>
+                <span>ร้านค้า / สำนักงาน</span>
+            </div>
+
+            <!-- ปุ่มตู้โหลดประจำชั้น -->
+            <a id="floorBoardLink" href="../Calcondo/calLoad-center.html" class="card-link">
+                <i class="fa-solid fa-server"></i>
+                <span>Load center ประจำชั้น</span>
+            </a>
+
+            <!-- ปุ่มโหลดส่วนกลาง (ตู้ 3 เฟส) -->
+            <a id="commonLoadLink" href="../Calcondo/calCommon-area.html" class="card-link">
+                <i class="fa-solid fa-lightbulb"></i>
+                <span>โหลดส่วนกลาง</span>
+            </a>
+
+            <!-- ปุ่มโหลดฉุกเฉิน (ตู้ 3 เฟส) -->
+            <a id="emergencyLoadLink" href="../Calcondo/calemergency.html" class="card-link">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>โหลดฉุกเฉิน</span>
+            </a>
+
+            <!-- ปุ่มสรุปผลการคำนวณ -->
+            <a href="condo-page-2.html" class="card-link">
+                <i class="fa-solid fa-file-invoice"></i>
+                <span>สรุปผลการคำนวณ</span>
+            </a>
+        </div>
+
+        <div class="btn-back-container">
+            <a href="../index.html" class="btn-back">
+                <i class="fa-solid fa-arrow-left"></i> กลับหน้าแรก
+            </a>
+        </div>
+    </div>
+
+    <!-- Modal 1: เลือกระบบไฟห้องพักอาศัย -->
+    <div id="phaseModal" class="modal-overlay">
+        <div class="modal-box">
+            <h3 id="phaseModalTitle">เลือกระบบไฟฟ้าห้องพักอาศัย</h3>
+            <p class="subtitle">กรุณาเลือกระบบไฟฟ้าที่ต้องการคำนวณ</p>
+            <div class="btn-group">
+                <button type="button" class="btn btn-primary" onclick="selectPhase(1)">
+                    <i class="fa-solid fa-bolt"></i> ระบบไฟ 1 เฟส
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="selectPhase(3)">
+                    <i class="fa-solid fa-charging-station"></i> ระบบไฟ 3 เฟส
+                </button>
+                <button type="button" class="btn btn-cancel" onclick="closePhaseModal()">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 2: ส่วนผู้ใช้กำหนด TYPE ห้อง และช่วงชั้น -->
+    <div id="roomSetupModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="roomSetupTitle">
+        <div class="modal-box wide">
+            <div class="room-head">
+                <h3 id="roomSetupTitle">
+                    <i class="fa-solid fa-door-open"></i> กำหนดห้องพักอาศัย
+                    <span id="phaseChip" class="phase-chip">1 เฟส</span>
+                </h3>
+                <div id="projectMeta" class="meta">โปรเจกต์ - | อาคาร - ชั้น</div>
+            </div>
+
+            <!-- กรณีไม่พบโปรเจกต์ -->
+            <div id="noProjectView" class="room-body" style="display:none;">
+                <div class="empty-project">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size:2.2rem; color:var(--accent-orange);"></i>
+                    <p>ไม่พบข้อมูลโปรเจกต์หรือจำนวนชั้นของอาคาร<br>กรุณาสร้างหรือเลือกโปรเจกต์จากหน้าแรกก่อน</p>
+                    <div class="room-actions" style="justify-content:center;">
+                        <button type="button" class="btn btn-cancel" onclick="closeRoomSetup()">ปิด</button>
+                        <a href="../index.html" class="btn btn-primary"><i class="fa-solid fa-house"></i> ไปหน้าแรก</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ฟอร์มกำหนดห้อง -->
+            <div id="roomFormView" class="room-body">
+
+                <!-- 1. TYPE ห้อง -->
+                <div class="form-group">
+                    <label class="form-label" for="roomTypeSelect">TYPE ห้อง</label>
+                    <select id="roomTypeSelect" class="field" onchange="onTypeChange()"></select>
+                    <div id="typeNotice" class="notice info" role="status">
+                        <i class="fa-solid fa-circle-info" style="margin-top:3px;"></i>
+                        <span id="typeNoticeText"></span>
+                    </div>
+                </div>
+
+                <!-- 2. ช่วงชั้นและจำนวนห้อง -->
+                <div class="form-group">
+                    <span class="form-label">จำนวนห้องต่อ 1 ชั้น และช่วงชั้นที่มีห้อง TYPE นี้</span>
+                    <div class="range-head" aria-hidden="true">
+                        <span>ตั้งแต่ชั้น</span>
+                        <span>ถึงชั้น</span>
+                        <span>จำนวนห้องต่อชั้น</span>
+                        <span></span>
+                    </div>
+                    <div id="rangeList" class="range-list"></div>
+                    <button type="button" class="btn-add-range" onclick="addRange()">
+                        <i class="fa-solid fa-plus"></i> เพิ่มช่วงชั้น (กรณีแต่ละช่วงชั้นมีจำนวนห้องไม่เท่ากัน)
+                    </button>
+                    <div id="maxFloorHelp" class="form-help">เลือกชั้นได้ตั้งแต่ชั้น 1 ถึงชั้น -</div>
+                </div>
+
+                <!-- สรุป -->
+                <div class="summary-box" aria-live="polite">
+                    <div>
+                        <div class="label">TYPE ห้อง</div>
+                        <div id="sumType" class="value">-</div>
+                    </div>
+                    <div>
+                        <div class="label">จำนวนชั้นที่มีห้อง</div>
+                        <div class="value"><span id="sumFloors">0</span> <small>ชั้น</small></div>
+                    </div>
+                    <div>
+                        <div class="label">จำนวนห้องรวม</div>
+                        <div class="value"><span id="sumRooms">0</span> <small>ห้อง</small></div>
+                    </div>
+                </div>
+
+                <div id="errorBox" class="notice error" role="alert" style="margin:-0.4rem 0 1.2rem;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-top:3px;"></i>
+                    <div>
+                        <strong>กรุณาแก้ไขข้อมูลก่อนดำเนินการต่อ</strong>
+                        <ul id="errorList"></ul>
+                    </div>
+                </div>
+
+                <div class="room-actions">
+                    <button type="button" class="btn btn-cancel" onclick="backToPhase()">
+                        <i class="fa-solid fa-arrow-left"></i> เปลี่ยนระบบไฟ
+                    </button>
+                    <div class="right">
+                        <button type="button" class="btn btn-cancel" onclick="closeRoomSetup()">ยกเลิก</button>
+                        <button type="button" id="btnConfirmRoom" class="btn btn-primary" onclick="confirmRoomSetup()">
+                            <i class="fa-solid fa-table-list"></i> ไปหน้าตารางโหลด
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal 3: กำหนดร้านค้า / สำนักงาน -->
+    <div id="shopSetupModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="shopSetupTitle">
+        <div class="modal-box wide">
+            <div class="room-head">
+                <h3 id="shopSetupTitle">
+                    <i class="fa-solid fa-store"></i> กำหนดร้านค้า / สำนักงาน
+                    <span id="shopPhaseChip" class="phase-chip">1 เฟส</span>
+                </h3>
+                <div id="shopProjectMeta" class="meta">โปรเจกต์ - | อาคาร - ชั้น</div>
+            </div>
+
+            <!-- กรณีไม่พบโปรเจกต์ -->
+            <div id="shopNoProjectView" class="room-body" style="display:none;">
+                <div class="empty-project">
+                    <i class="fa-solid fa-circle-exclamation" style="font-size:2.2rem; color:var(--accent-orange);"></i>
+                    <p>ไม่พบข้อมูลโปรเจกต์หรือจำนวนชั้นของอาคาร<br>กรุณาสร้างหรือเลือกโปรเจกต์จากหน้าแรกก่อน</p>
+                    <div class="room-actions" style="justify-content:center;">
+                        <button type="button" class="btn btn-cancel" onclick="closeShopSetup()">ปิด</button>
+                        <a href="../index.html" class="btn btn-primary"><i class="fa-solid fa-house"></i> ไปหน้าแรก</a>
+                    </div>
+                </div>
+            </div>
+
+            <div id="shopFormView" class="room-body">
+                <div class="form-group">
+                    <label class="form-label" for="shopPick">รายการ</label>
+                    <select id="shopPick" class="field" onchange="onShopPick()"></select>
+                    <div class="form-help">เลือกรายการเดิมเพื่อแก้ไขตารางโหลด หรือเพิ่มรายการใหม่</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="shopKind">ประเภท</label>
+                    <select id="shopKind" class="field" onchange="onShopKindChange()">
+                        <option value="shop">ร้านค้า</option>
+                        <option value="office">สำนักงาน</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="shopName">ชื่อ / เลขห้อง</label>
+                    <input id="shopName" class="field text-field" type="text" maxlength="40" placeholder="เช่น ร้านค้า 1" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="shopFloor">อยู่ชั้นที่</label>
+                    <select id="shopFloor" class="field"></select>
+                </div>
+
+                <div id="shopErrorBox" class="notice error" role="alert" style="margin:-0.4rem 0 1.2rem;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-top:3px;"></i>
+                    <span id="shopErrorText"></span>
+                </div>
+
+                <div class="room-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeShopSetup(); openPhaseModal('shop');">
+                        <i class="fa-solid fa-arrow-left"></i> เปลี่ยนระบบไฟ
+                    </button>
+                    <div class="right">
+                        <button type="button" class="btn btn-cancel" onclick="closeShopSetup()">ยกเลิก</button>
+                        <button type="button" class="btn btn-primary" onclick="confirmShopSetup()">
+                            <i class="fa-solid fa-table-list"></i> ไปหน้าตารางโหลด
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; ระบบคำนวณโหลดไฟฟ้าอาคารชุด</p>
+    </footer>
+
+    <script>
+        // ===== ค่าคงที่ =====
+        const PHASE_PAGES = {
+            1: '../Calcondo/calroom_1_phase.html',
+            3: '../Calcondo/calroom_3_phase.html'
+        };
+        const ROOM_TYPES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        const SHOP_PAGES = {
+            1: '../Calcondo/calshop_office1phase.html',
+            3: '../Calcondo/calshop_office3phase.html'
+        };
+        const KIND_NAMES = { shop: 'ร้านค้า', office: 'สำนักงาน' };
+        let phaseTarget = 'room';   // เลือกเฟสให้ 'room' (ห้องพักอาศัย) หรือ 'shop' (ร้านค้า/สำนักงาน)
+
+        // ===== สถานะของหน้า =====
+        let selectedPhase = null;   // 1 หรือ 3
+        let project = null;         // โปรเจกต์ปัจจุบัน (มี floors จาก index.html)
+        let projectData = null;     // ข้อมูลเฉพาะโปรเจกต์ (e_condo_data_<id>)
+        let ranges = [];            // [{from, to, rooms}]
+
+        // ===== localStorage helpers =====
+        function readJSON(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                return raw ? JSON.parse(raw) : fallback;
+            } catch (e) {
+                return fallback;
+            }
+        }
+
+        function writeJSON(key, value) {
+            try {
+                localStorage.setItem(key, JSON.stringify(value));
+                return true;
+            } catch (e) {
+                alert('บันทึกข้อมูลไม่สำเร็จ: ' + e.message);
+                return false;
+            }
+        }
+
+        // ดึงโปรเจกต์ปัจจุบัน โดยอ่านค่าล่าสุดจากรายการโปรเจกต์รวม
+        function loadCurrentProject() {
+            const current = readJSON('e_condo_current_project', null);
+            if (!current || !current.id) return null;
+            const list = readJSON('e_condo_projects', []);
+            return list.find(p => p.id === current.id) || current;
+        }
+
+        function loadProjectData(p) {
+            const data = readJSON(`e_condo_data_${p.id}`, null) || {
+                projectInfo: p, rooms: [], floorBoards: [], commonLoad: [], emergencyLoad: [], shopOffices: []
+            };
+            if (!Array.isArray(data.rooms)) data.rooms = [];
+            if (!Array.isArray(data.shopOffices)) data.shopOffices = [];
+            return data;
+        }
+
+        function getMaxFloor() {
+            return parseInt(project && project.floors, 10) || 0;
+        }
+
+        function findRoom(type) {
+            return projectData.rooms.find(r => r.type === type) || null;
+        }
+
+        // ===== Modal 1: เลือกเฟส =====
+        function openPhaseModal(target) {
+            phaseTarget = target === 'shop' ? 'shop' : 'room';
+            document.getElementById('phaseModalTitle').textContent = phaseTarget === 'shop'
+                ? 'เลือกระบบไฟฟ้าร้านค้า / สำนักงาน'
+                : 'เลือกระบบไฟฟ้าห้องพักอาศัย';
+            document.getElementById('phaseModal').classList.add('active');
+        }
+
+        function closePhaseModal() {
+            document.getElementById('phaseModal').classList.remove('active');
+        }
+
+        function selectPhase(phase) {
+            selectedPhase = phase;
+            closePhaseModal();
+            if (phaseTarget === 'shop') openShopSetup();
+            else openRoomSetup();
+        }
+
+        // ===== Modal 2: กำหนด TYPE ห้อง และช่วงชั้น =====
+        function openRoomSetup() {
+            project = loadCurrentProject();
+            const maxFloor = getMaxFloor();
+
+            document.getElementById('phaseChip').textContent = `${selectedPhase} เฟส`;
+
+            const hasProject = project && maxFloor >= 1;
+            document.getElementById('noProjectView').style.display = hasProject ? 'none' : 'block';
+            document.getElementById('roomFormView').style.display = hasProject ? 'block' : 'none';
+
+            if (hasProject) {
+                projectData = loadProjectData(project);
+                document.getElementById('projectMeta').textContent =
+                    `โปรเจกต์ ${project.name} | อาคาร ${maxFloor} ชั้น`;
+                document.getElementById('maxFloorHelp').textContent =
+                    `เลือกชั้นได้ตั้งแต่ชั้น 1 ถึงชั้น ${maxFloor} (ตามจำนวนชั้นที่กรอกตอนสร้างโปรเจกต์)`;
+                renderTypeOptions();
+                onTypeChange();
+            } else {
+                document.getElementById('projectMeta').textContent = 'ยังไม่ได้เลือกโปรเจกต์';
+            }
+
+            hideErrors();
+            document.getElementById('roomSetupModal').classList.add('active');
+            setTimeout(() => {
+                const first = document.getElementById(hasProject ? 'roomTypeSelect' : 'noProjectView');
+                if (first && first.focus) first.focus();
+            }, 50);
+        }
+
+        function closeRoomSetup() {
+            document.getElementById('roomSetupModal').classList.remove('active');
+        }
+
+        function backToPhase() {
+            closeRoomSetup();
+            openPhaseModal();
+        }
+
+        // สร้างตัวเลือก TYPE A-Z พร้อมบอกว่า TYPE ไหนกำหนดไว้แล้ว
+        function renderTypeOptions() {
+            const select = document.getElementById('roomTypeSelect');
+            select.innerHTML = '';
+
+            ROOM_TYPES.forEach(letter => {
+                const existing = findRoom(letter);
+                const opt = document.createElement('option');
+                opt.value = letter;
+                opt.textContent = existing
+                    ? `TYPE ${letter}  (กำหนดแล้ว · ${existing.phase} เฟส · ${existing.totalRooms} ห้อง)`
+                    : `TYPE ${letter}`;
+                select.appendChild(opt);
+            });
+
+            // ค่าเริ่มต้น: TYPE แรกที่ยังไม่ถูกใช้
+            const firstFree = ROOM_TYPES.find(l => !findRoom(l)) || 'A';
+            select.value = firstFree;
+        }
+
+        function onTypeChange() {
+            const type = document.getElementById('roomTypeSelect').value;
+            const existing = findRoom(type);
+            const notice = document.getElementById('typeNotice');
+            const noticeText = document.getElementById('typeNoticeText');
+            const maxFloor = getMaxFloor();
+
+            if (existing) {
+                // โหลดช่วงชั้นเดิมมาแก้ไข (ตัดให้อยู่ในจำนวนชั้นปัจจุบัน)
+                ranges = (existing.floorRanges || []).map(r => ({
+                    from: Math.min(r.from, maxFloor),
+                    to: Math.min(r.to, maxFloor),
+                    rooms: r.roomsPerFloor
+                }));
+                if (ranges.length === 0) ranges = [{ from: 1, to: maxFloor, rooms: '' }];
+
+                let msg = `TYPE ${type} กำหนดไว้แล้ว — ข้อมูลเดิมถูกโหลดมาให้แก้ไข เมื่อกดยืนยันจะบันทึกทับของเดิม`;
+                if (existing.phase !== selectedPhase) {
+                    msg += ` (เดิมเป็นระบบไฟ ${existing.phase} เฟส แต่ตอนนี้เลือก ${selectedPhase} เฟส)`;
+                }
+                noticeText.textContent = msg;
+                notice.classList.add('show');
+            } else {
+                ranges = [{ from: 1, to: maxFloor, rooms: '' }];
+                notice.classList.remove('show');
+            }
+
+            hideErrors();
+            renderRanges();
+        }
+
+        // ===== ช่วงชั้น =====
+        function floorOptionsHTML(selected) {
+            const maxFloor = getMaxFloor();
+            let html = '';
+            for (let i = 1; i <= maxFloor; i++) {
+                html += `<option value="${i}" ${i === selected ? 'selected' : ''}>ชั้น ${i}</option>`;
+            }
+            return html;
+        }
+
+        function renderRanges() {
+            const list = document.getElementById('rangeList');
+            list.innerHTML = '';
+
+            ranges.forEach((r, idx) => {
+                const row = document.createElement('div');
+                row.className = 'range-row';
+                row.dataset.index = idx;
+                row.innerHTML = `
+                    <div>
+                        <span class="mobile-label">ตั้งแต่ชั้น</span>
+                        <select class="field range-from" aria-label="ช่วงที่ ${idx + 1} ตั้งแต่ชั้น">
+                            ${floorOptionsHTML(r.from)}
+                        </select>
+                    </div>
+                    <div>
+                        <span class="mobile-label">ถึงชั้น</span>
+                        <select class="field range-to" aria-label="ช่วงที่ ${idx + 1} ถึงชั้น">
+                            ${floorOptionsHTML(r.to)}
+                        </select>
+                    </div>
+                    <div class="rooms-cell">
+                        <span class="mobile-label">จำนวนห้องต่อชั้น</span>
+                        <div class="unit-wrap">
+                            <input type="number" class="field range-rooms" min="1" step="1" inputmode="numeric"
+                                   placeholder="0" value="${r.rooms}" aria-label="ช่วงที่ ${idx + 1} จำนวนห้องต่อชั้น" />
+                            <span class="unit">ห้อง/ชั้น</span>
+                        </div>
+                    </div>
+                    <button type="button" class="icon-btn" title="ลบช่วงชั้นนี้" aria-label="ลบช่วงที่ ${idx + 1}"
+                            ${ranges.length <= 1 ? 'disabled' : ''}>
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                    <div class="range-sub"></div>
+                `;
+
+                row.querySelector('.range-from').addEventListener('change', e => {
+                    ranges[idx].from = parseInt(e.target.value, 10);
+                    // ถ้าชั้นเริ่มสูงกว่าชั้นสุดท้าย ให้ขยับชั้นสุดท้ายตาม
+                    if (ranges[idx].to < ranges[idx].from) {
+                        ranges[idx].to = ranges[idx].from;
+                        row.querySelector('.range-to').value = ranges[idx].to;
+                    }
+                    refreshSummary();
+                });
+                row.querySelector('.range-to').addEventListener('change', e => {
+                    ranges[idx].to = parseInt(e.target.value, 10);
+                    refreshSummary();
+                });
+                row.querySelector('.range-rooms').addEventListener('input', e => {
+                    ranges[idx].rooms = e.target.value;
+                    refreshSummary();
+                });
+                row.querySelector('.icon-btn').addEventListener('click', () => removeRange(idx));
+
+                list.appendChild(row);
+            });
+
+            refreshSummary();
+        }
+
+        function addRange() {
+            const maxFloor = getMaxFloor();
+            const lastTo = ranges.length ? Math.max(...ranges.map(r => r.to)) : 0;
+            const start = Math.min(lastTo + 1, maxFloor);
+            ranges.push({ from: start, to: maxFloor, rooms: '' });
+            renderRanges();
+            const rows = document.querySelectorAll('#rangeList .range-row');
+            rows[rows.length - 1].querySelector('.range-from').focus();
+        }
+
+        function removeRange(idx) {
+            if (ranges.length <= 1) return;
+            ranges.splice(idx, 1);
+            renderRanges();
+        }
+
+        // ===== ตรวจข้อมูล =====
+        function validateRanges() {
+            const maxFloor = getMaxFloor();
+            const errors = [];
+            const rowErrors = ranges.map(() => ({ from: false, to: false, rooms: false }));
+
+            ranges.forEach((r, i) => {
+                const label = `ช่วงที่ ${i + 1}`;
+                if (!(r.from >= 1 && r.from <= maxFloor)) {
+                    errors.push(`${label}: ชั้นเริ่มต้นต้องอยู่ระหว่างชั้น 1 ถึง ${maxFloor}`);
+                    rowErrors[i].from = true;
+                }
+                if (!(r.to >= 1 && r.to <= maxFloor)) {
+                    errors.push(`${label}: ชั้นสุดท้ายต้องอยู่ระหว่างชั้น 1 ถึง ${maxFloor}`);
+                    rowErrors[i].to = true;
+                }
+                if (r.from > r.to) {
+                    errors.push(`${label}: "ตั้งแต่ชั้น" ต้องไม่สูงกว่า "ถึงชั้น"`);
+                    rowErrors[i].from = rowErrors[i].to = true;
+                }
+                const n = Number(r.rooms);
+                if (r.rooms === '' || !Number.isInteger(n) || n < 1) {
+                    errors.push(`${label}: กรอกจำนวนห้องต่อชั้นเป็นจำนวนเต็มตั้งแต่ 1 ห้องขึ้นไป`);
+                    rowErrors[i].rooms = true;
+                }
+            });
+
+            // ตรวจช่วงชั้นซ้อนกันภายใน TYPE เดียวกัน
+            for (let i = 0; i < ranges.length; i++) {
+                for (let j = i + 1; j < ranges.length; j++) {
+                    const a = ranges[i], b = ranges[j];
+                    if (a.from <= b.to && b.from <= a.to) {
+                        const s = Math.max(a.from, b.from), e = Math.min(a.to, b.to);
+                        errors.push(`ช่วงที่ ${i + 1} และช่วงที่ ${j + 1} ซ้อนกันที่ชั้น ${s === e ? s : s + '–' + e}`);
+                        rowErrors[i].from = rowErrors[i].to = true;
+                        rowErrors[j].from = rowErrors[j].to = true;
+                    }
+                }
+            }
+
+            return { errors, rowErrors };
+        }
+
+        function refreshSummary() {
+            const type = document.getElementById('roomTypeSelect').value;
+            let floors = 0, rooms = 0;
+
+            const rows = document.querySelectorAll('#rangeList .range-row');
+            ranges.forEach((r, i) => {
+                const n = Number(r.rooms);
+                const count = r.to >= r.from ? (r.to - r.from + 1) : 0;
+                const sub = rows[i] && rows[i].querySelector('.range-sub');
+                if (count > 0 && Number.isInteger(n) && n >= 1) {
+                    floors += count;
+                    rooms += count * n;
+                    if (sub) sub.textContent = `${count} ชั้น × ${n} ห้อง = ${(count * n).toLocaleString()} ห้อง`;
+                } else if (sub) {
+                    sub.textContent = count > 0 ? `${count} ชั้น` : '';
+                }
+            });
+
+            document.getElementById('sumType').textContent = type || '-';
+            document.getElementById('sumFloors').textContent = floors.toLocaleString();
+            document.getElementById('sumRooms').textContent = rooms.toLocaleString();
+
+            // ถ้ากล่องแจ้งข้อผิดพลาดเปิดอยู่ ให้ตรวจใหม่ทันทีที่แก้ข้อมูล
+            if (document.getElementById('errorBox').classList.contains('show')) {
+                showValidation(validateRanges());
+            }
+
+            return { floors, rooms };
+        }
+
+        function showValidation(result) {
+            const box = document.getElementById('errorBox');
+            const list = document.getElementById('errorList');
+            const rows = document.querySelectorAll('#rangeList .range-row');
+
+            rows.forEach((row, i) => {
+                const re = result.rowErrors[i] || {};
+                row.querySelector('.range-from').setAttribute('aria-invalid', re.from ? 'true' : 'false');
+                row.querySelector('.range-to').setAttribute('aria-invalid', re.to ? 'true' : 'false');
+                row.querySelector('.range-rooms').setAttribute('aria-invalid', re.rooms ? 'true' : 'false');
+            });
+
+            if (result.errors.length) {
+                list.innerHTML = result.errors.map(e => `<li>${e}</li>`).join('');
+                box.classList.add('show');
+            } else {
+                box.classList.remove('show');
+                list.innerHTML = '';
+            }
+        }
+
+        function hideErrors() {
+            document.getElementById('errorBox').classList.remove('show');
+            document.getElementById('errorList').innerHTML = '';
+        }
+
+        // ===== ยืนยันและไปหน้าตารางโหลด =====
+        function confirmRoomSetup() {
+            const result = validateRanges();
+            showValidation(result);
+            if (result.errors.length) {
+                document.getElementById('errorBox').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                return;
+            }
+
+            const type = document.getElementById('roomTypeSelect').value;
+            const existing = findRoom(type);
+            let keepSchedule = true;
+
+            if (existing && existing.phase !== selectedPhase) {
+                const ok = confirm(
+                    `TYPE ${type} เดิมกำหนดเป็นระบบไฟ ${existing.phase} เฟส\n` +
+                    `ต้องการเปลี่ยนเป็น ${selectedPhase} เฟสหรือไม่?\n\n` +
+                    `*ตารางโหลดเดิมของ TYPE ${type} จะถูกล้าง เพราะใช้คนละรูปแบบกัน`
+                );
+                if (!ok) return;
+                keepSchedule = false;
+            }
+
+            const floorRanges = ranges
+                .map(r => ({ from: r.from, to: r.to, roomsPerFloor: Number(r.rooms) }))
+                .sort((a, b) => a.from - b.from);
+            const totalRooms = floorRanges.reduce((s, r) => s + (r.to - r.from + 1) * r.roomsPerFloor, 0);
+
+            const room = {
+                type: type,
+                phase: selectedPhase,
+                floorRanges: floorRanges,
+                totalRooms: totalRooms,
+                loadSchedule: existing && keepSchedule ? (existing.loadSchedule || null) : null,
+                createdAt: existing ? existing.createdAt : new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+
+            if (existing) {
+                projectData.rooms = projectData.rooms.map(r => r.type === type ? room : r);
+            } else {
+                projectData.rooms.push(room);
+            }
+            projectData.rooms.sort((a, b) => a.type.localeCompare(b.type));
+
+            if (!writeJSON(`e_condo_data_${project.id}`, projectData)) return;
+            // บอกหน้าตารางโหลดว่ากำลังทำห้อง TYPE ไหน
+            writeJSON('e_condo_current_room', { projectId: project.id, type: type, phase: selectedPhase });
+
+            const url = `${PHASE_PAGES[selectedPhase]}?projectId=${encodeURIComponent(project.id)}&type=${encodeURIComponent(type)}`;
+            closeRoomSetup();
+            window.open(url, '_blank');
+        }
+
+        // ===== Modal 3: ร้านค้า / สำนักงาน =====
+        function openShopSetup() {
+            project = loadCurrentProject();
+            const maxFloor = getMaxFloor();
+            const hasProject = project && maxFloor >= 1;
+
+            document.getElementById('shopPhaseChip').textContent = `${selectedPhase} เฟส`;
+            document.getElementById('shopNoProjectView').style.display = hasProject ? 'none' : 'block';
+            document.getElementById('shopFormView').style.display = hasProject ? 'block' : 'none';
+            document.getElementById('shopErrorBox').classList.remove('show');
+
+            if (hasProject) {
+                projectData = loadProjectData(project);
+                document.getElementById('shopProjectMeta').textContent =
+                    `โปรเจกต์ ${project.name} | อาคาร ${maxFloor} ชั้น`;
+
+                const floorSel = document.getElementById('shopFloor');
+                floorSel.innerHTML = '';
+                for (let i = 1; i <= maxFloor; i++) floorSel.add(new Option(`ชั้น ${i}`, i));
+
+                const pick = document.getElementById('shopPick');
+                pick.innerHTML = '';
+                pick.add(new Option('+ เพิ่มรายการใหม่', ''));
+                projectData.shopOffices.forEach(u => {
+                    pick.add(new Option(`${u.name} — ${KIND_NAMES[u.kind] || ''} ชั้น ${u.floor} (${u.phase} เฟส)${u.loadSchedule ? ' ✓' : ''}`, u.id));
+                });
+                pick.value = '';
+                onShopPick();
+            } else {
+                document.getElementById('shopProjectMeta').textContent = 'ยังไม่ได้เลือกโปรเจกต์';
+            }
+
+            document.getElementById('shopSetupModal').classList.add('active');
+            setTimeout(() => {
+                const first = document.getElementById(hasProject ? 'shopPick' : 'shopNoProjectView');
+                if (first && first.focus) first.focus();
+            }, 50);
+        }
+
+        function closeShopSetup() {
+            document.getElementById('shopSetupModal').classList.remove('active');
+        }
+
+        // ชื่อถัดไปที่ยังไม่ซ้ำ เช่น ร้านค้า 3
+        function nextShopName(kind) {
+            const base = KIND_NAMES[kind] || 'ร้านค้า';
+            const names = new Set(projectData.shopOffices.map(u => u.name));
+            let i = 1;
+            while (names.has(`${base} ${i}`)) i++;
+            return `${base} ${i}`;
+        }
+
+        function onShopPick() {
+            const id = document.getElementById('shopPick').value;
+            const u = projectData.shopOffices.find(x => x.id === id);
+            document.getElementById('shopKind').value = u ? u.kind : 'shop';
+            document.getElementById('shopName').value = u ? u.name : nextShopName('shop');
+            document.getElementById('shopFloor').value = u ? u.floor : 1;
+            document.getElementById('shopName').removeAttribute('aria-invalid');
+        }
+
+        // เปลี่ยนประเภทของรายการใหม่: เปลี่ยนชื่อที่ตั้งให้อัตโนมัติด้วย
+        function onShopKindChange() {
+            if (document.getElementById('shopPick').value) return;
+            const nameEl = document.getElementById('shopName');
+            if (/^(ร้านค้า|สำนักงาน) \d+$/.test(nameEl.value.trim()) || !nameEl.value.trim()) {
+                nameEl.value = nextShopName(document.getElementById('shopKind').value);
+            }
+        }
+
+        function shopError(msg) {
+            document.getElementById('shopErrorText').textContent = msg;
+            document.getElementById('shopErrorBox').classList.add('show');
+        }
+
+        function confirmShopSetup() {
+            const id = document.getElementById('shopPick').value;
+            const kind = document.getElementById('shopKind').value;
+            const nameEl = document.getElementById('shopName');
+            const name = nameEl.value.trim();
+            const floor = parseInt(document.getElementById('shopFloor').value, 10) || 1;
+
+            if (!name) {
+                nameEl.setAttribute('aria-invalid', 'true');
+                shopError('กรุณากรอกชื่อ / เลขห้อง');
+                nameEl.focus();
+                return;
+            }
+            if (projectData.shopOffices.some(u => u.name === name && u.id !== id)) {
+                nameEl.setAttribute('aria-invalid', 'true');
+                shopError(`ชื่อ "${name}" มีอยู่แล้ว กรุณาเลือกจากรายการเดิม หรือใช้ชื่ออื่น`);
+                nameEl.focus();
+                return;
+            }
+            nameEl.removeAttribute('aria-invalid');
+
+            const now = new Date().toISOString();
+            let unit = projectData.shopOffices.find(u => u.id === id);
+            if (unit) {
+                if (unit.phase !== selectedPhase) {
+                    const ok = confirm(
+                        `${unit.name} เดิมกำหนดเป็นระบบไฟ ${unit.phase} เฟส\n` +
+                        `ต้องการเปลี่ยนเป็น ${selectedPhase} เฟสหรือไม่?\n\n` +
+                        `*ตารางโหลดเดิมจะถูกล้าง เพราะใช้คนละรูปแบบกัน`
+                    );
+                    if (!ok) return;
+                    unit.loadSchedule = null;
+                }
+                Object.assign(unit, { kind, name, floor, phase: selectedPhase, updatedAt: now });
+            } else {
+                unit = {
+                    id: 'so_' + Date.now().toString(36),
+                    kind, name, floor,
+                    phase: selectedPhase,
+                    loadSchedule: null,
+                    createdAt: now,
+                    updatedAt: now
+                };
+                projectData.shopOffices.push(unit);
+            }
+
+            if (!writeJSON(`e_condo_data_${project.id}`, projectData)) return;
+            writeJSON('e_condo_current_shop', { projectId: project.id, unit: unit.id });
+
+            closeShopSetup();
+            window.location.href =
+                `${SHOP_PAGES[selectedPhase]}?projectId=${encodeURIComponent(project.id)}&unit=${encodeURIComponent(unit.id)}`;
+        }
+
+        // ลิงก์โหลดส่วนกลาง / โหลดฉุกเฉิน / สรุปผล ให้เปิดโปรเจกต์ที่กำลังทำ
+        (function setProjectLinks() {
+            const current = loadCurrentProject();
+            if (!current || !current.id) return;
+            const q = `?projectId=${encodeURIComponent(current.id)}`;
+            document.getElementById('floorBoardLink').href = `../Calcondo/calLoad-center.html${q}`;
+            document.getElementById('commonLoadLink').href = `../Calcondo/calCommon-area.html${q}`;
+            document.getElementById('emergencyLoadLink').href = `../Calcondo/calemergency.html${q}`;
+            const summary = document.querySelector('a.card-link[href="condo-page-2.html"]');
+            if (summary) summary.href = `condo-page-2.html${q}`;
+        })();
+
+        // ปิด modal ด้วยปุ่ม Esc หรือคลิกพื้นหลัง
+        document.addEventListener('keydown', e => {
+            if (e.key !== 'Escape') return;
+            if (document.getElementById('roomSetupModal').classList.contains('active')) closeRoomSetup();
+            else if (document.getElementById('shopSetupModal').classList.contains('active')) closeShopSetup();
+            else closePhaseModal();
+        });
+
+        ['phaseModal', 'roomSetupModal', 'shopSetupModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', e => {
+                if (e.target.id === id) e.currentTarget.classList.remove('active');
+            });
+        });
+    </script>
+
+</body>
+</html>

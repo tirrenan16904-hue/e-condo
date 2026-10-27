@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ตารางโหลดห้องพักอาศัย</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-navy: #0F2027;
+            --secondary-navy: #203A43;
+            --accent-orange: #FF6B35;
+            --hover-orange: #E85A24;
+            --bg-light: #F4F7F9;
+            --text-dark: #2C3E50;
+        }
+
+        body {
+            font-family: 'Prompt', 'Sarabun', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .eng-table {
+            border-collapse: collapse;
+            width: 100%;
+            min-width: 820px;
+            background-color: #ffffff;
+            font-family: 'Sarabun', sans-serif;
+        }
+
+        .eng-table th, .eng-table td {
+            border: 1px solid #1f2937;
+            padding: 6px 8px;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+
+        .eng-table th {
+            background-color: #f8fafc;
+            font-weight: 600;
+        }
+
+        .eng-table td.num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .eng-table td.desc {
+            text-align: left;
+        }
+
+        @media print {
+            body { background: white; }
+            .no-print { display: none !important; }
+            .sheet { box-shadow: none !important; border: none !important; padding: 0 !important; }
+            main { margin: 0 !important; max-width: 100% !important; padding: 0 !important; }
+            .eng-table { min-width: 0; }
+            .eng-table th, .eng-table td { border-color: #000; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="no-print bg-gradient-to-r from-[#0F2027] to-[#203A43] text-white py-5 px-4 text-center shadow-md border-b-4 border-[#FF6B35]">
+        <h1 class="text-xl sm:text-2xl font-bold flex items-center justify-center gap-2">
+            <i class="fa-solid fa-table-list text-[#FF6B35]"></i> ตารางโหลดห้องพักอาศัย
+        </h1>
+        <p id="headerSub" class="text-gray-300 text-sm mt-1 font-light">LOAD SCHEDULE</p>
+    </header>
+
+    <main class="max-w-6xl w-full mx-auto my-8 px-4 flex-grow">
+        <div class="sheet bg-white rounded-2xl shadow-md p-6 sm:p-8 border border-gray-100">
+
+            <!-- กรณีไม่พบข้อมูล -->
+            <div id="emptyView" class="text-center py-10" style="display:none;">
+                <i class="fa-solid fa-circle-exclamation text-4xl text-[#FF6B35]"></i>
+                <p id="emptyText" class="text-gray-600 mt-4 mb-6">ไม่พบข้อมูลตารางโหลด</p>
+                <a href="condo-page-1.html" class="inline-flex items-center gap-2 bg-[#203A43] hover:bg-[#FF6B35] text-white px-6 py-2.5 rounded-full font-medium transition">
+                    <i class="fa-solid fa-arrow-left"></i> ไปหน้าอาคารชุดที่อยู่อาศัย
+                </a>
+            </div>
+
+            <!-- ตารางโหลด -->
+            <div id="scheduleView" style="display:none;">
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-4">
+                    <div>
+                        <div class="font-semibold text-base tracking-wide">
+                            ตาราง LOAD SCHEDULE OF ROOM
+                            <span id="typeTag" class="ml-2 font-bold text-[#FF6B35]">TYPE A</span>
+                        </div>
+                        <div id="roomMeta" class="text-sm text-gray-600 mt-1"></div>
+                    </div>
+                    <div class="flex gap-2 no-print">
+                        <button onclick="window.print()" class="bg-[#FF6B35] hover:bg-[#E85A24] text-white text-sm px-4 py-2 rounded flex items-center gap-2 transition">
+                            <i class="fa-solid fa-print"></i> พิมพ์
+                        </button>
+                        <a href="condo-page-2.html" class="bg-[#203A43] hover:opacity-90 text-white text-sm px-4 py-2 rounded flex items-center gap-2 transition">
+                            <i class="fa-solid fa-file-invoice"></i> หน้าสรุปผล
+                        </a>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="eng-table">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" style="width: 8%;">CIRCUIT NO.</th>
+                                <th rowspan="2" style="width: 22%;">DESCRIPTION</th>
+                                <th rowspan="2" style="width: 10%;">LOAD (VA)</th>
+                                <th colspan="3">CB.</th>
+                                <th colspan="2">CONDUCTOR</th>
+                                <th colspan="2">RACE WAY</th>
+                            </tr>
+                            <tr>
+                                <th>TYPE</th>
+                                <th>P.</th>
+                                <th>AT.</th>
+                                <th>TYPE</th>
+                                <th>SIZE</th>
+                                <th>TYPE</th>
+                                <th><span class="text-lg">Ø</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="scheduleBody"></tbody>
+                    </table>
+                </div>
+
+                <div id="savedAt" class="mt-4 text-xs text-gray-500"></div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="no-print bg-[#0F2027] text-gray-400 text-center py-4 text-sm mt-auto">
+        <p>&copy; ระบบคำนวณโหลดไฟฟ้าอาคารชุด</p>
+    </footer>
+
+    <script>
+        function esc(v) {
+            return String(v == null ? '' : v)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function dash(v) {
+            return v === '' || v == null ? '-' : esc(v);
+        }
+
+        function showEmpty(message) {
+            document.getElementById('emptyText').textContent = message;
+            document.getElementById('emptyView').style.display = 'block';
+        }
+
+
+        // ===== เกณฑ์โหลดห้องชุดตามพื้นที่ (วสท.) =====
+        function eitText(ls) {
+            const e = ls && ls.eit;
+            if (!e) return '';
+            const cool = e.centralCooling ? 'มี' : 'ไม่มี';
+            const base = `พื้นที่ ${Number(e.area).toLocaleString()} m² · ${cool}ระบบทำความเย็นจากส่วนกลาง`;
+            return e.method === 'area'
+                ? `คำนวณตามพื้นที่ (วสท.) · ${base}`
+                : `คำนวณตามวงจรย่อย · ${base} · ขั้นต่ำ วสท. ${(e.minVA || 0).toLocaleString()} VA`;
+        }
+
+        // แถวเพิ่มเติมก่อน TOTAL: โหลดตามพื้นที่ / ผลรวมวงจรย่อยที่ต่ำกว่าเกณฑ์
+        function eitRows(ls, cols, three) {
+            const e = ls && ls.eit;
+            if (!e) return '';
+            if (e.method === 'area') {
+                const ph = three ? ['A', 'B', 'C'].map(p => {
+                    const v = ls['total' + p];
+                    return `<td class="num">${v ? v.toLocaleString() : '-'}</td>`;
+                }).join('') : '';
+                return `
+                    <tr>
+                        <td>-</td>
+                        <td class="text-left px-3">โหลดตามพื้นที่ วสท. (${e.k} × ${Number(e.area).toLocaleString()} m² + ${(e.c || 0).toLocaleString()})</td>
+                        <td class="num">${(ls.totalVA || 0).toLocaleString()}</td>
+                        ${ph}
+                        <td colspan="7">-</td>
+                    </tr>`;
+            }
+            if (e.minApplied) {
+                return `
+                    <tr class="text-gray-600">
+                        <td colspan="2" class="text-right px-3">ผลรวมวงจรย่อย (ต่ำกว่าขั้นต่ำ วสท. → ใช้ ${(e.minVA || 0).toLocaleString()} VA)</td>
+                        <td class="num">${(e.circuitVA || 0).toLocaleString()}</td>
+                        <td colspan="${cols - 3}"></td>
+                    </tr>`;
+            }
+            return '';
+        }
+
+        window.onload = function () {
+            const params = new URLSearchParams(window.location.search);
+            let current = {};
+            try { current = JSON.parse(localStorage.getItem('e_condo_current_room') || '{}'); } catch (e) {}
+            const projectId = params.get('projectId') || current.projectId;
+            const type = params.get('type') || current.type;
+
+            if (!projectId || !type) {
+                showEmpty('ไม่พบข้อมูล TYPE ห้อง กรุณาเริ่มจากเมนู "ห้องพักอาศัย"');
+                return;
+            }
+
+            let data = null;
+            try { data = JSON.parse(localStorage.getItem(`e_condo_data_${projectId}`) || 'null'); } catch (e) {}
+            const room = data && (data.rooms || []).find(r => r.type === type);
+
+            if (!room) {
+                showEmpty(`ไม่พบห้อง TYPE ${type} ในโปรเจกต์นี้`);
+                return;
+            }
+            if (!room.loadSchedule || !room.loadSchedule.circuits) {
+                showEmpty(`ห้อง TYPE ${type} ยังไม่ได้สร้างตารางโหลด กรุณากรอกตารางแล้วกด "สร้างตารางโหลด"`);
+                return;
+            }
+
+            const ls = room.loadSchedule;
+            const projectName = data.projectInfo && data.projectInfo.name ? data.projectInfo.name : '';
+            const rangesText = (room.floorRanges || []).map(r =>
+                `${r.from === r.to ? 'ชั้น ' + r.from : 'ชั้น ' + r.from + '–' + r.to} (${r.roomsPerFloor} ห้อง/ชั้น)`
+            ).join(', ');
+
+            document.title = `LOAD SCHEDULE ห้อง TYPE ${type}`;
+            document.getElementById('headerSub').textContent = projectName ? `${projectName} · ห้อง TYPE ${type}` : `ห้อง TYPE ${type}`;
+            document.getElementById('typeTag').textContent = `TYPE ${type}`;
+            document.getElementById('roomMeta').textContent =
+                `${projectName ? projectName + ' · ' : ''}ระบบไฟ ${room.phase} เฟส · ${rangesText} · รวม ${room.totalRooms.toLocaleString()} ห้อง`
+                + (eitText(ls) ? ` · ${eitText(ls)}` : '');
+
+            const body = document.getElementById('scheduleBody');
+            body.innerHTML = ls.circuits.map(c => `
+                <tr>
+                    <td>${c.no}</td>
+                    <td class="desc">${dash(c.description)}</td>
+                    <td class="num">${c.loadVA ? c.loadVA.toLocaleString() : '-'}</td>
+                    <td>${dash(c.cbType)}</td>
+                    <td>${dash(c.cbPole)}</td>
+                    <td>${dash(c.cbAT)}</td>
+                    <td>${dash(c.conductorType)}</td>
+                    <td>${dash(c.conductorSize)}</td>
+                    <td>${dash(c.racewayType)}</td>
+                    <td>${dash(c.racewaySize)}</td>
+                </tr>
+            `).join('');
+
+            body.innerHTML += eitRows(ls, 10, false);
+
+            const m = ls.main || {};
+            body.innerHTML += `
+                <tr class="font-bold bg-gray-50">
+                    <td colspan="2" class="text-right px-3">TOTAL LOAD (VA)</td>
+                    <td class="num">${(ls.totalVA || 0).toLocaleString()}</td>
+                    <td>${dash(m.cbType)}</td>
+                    <td>${dash(m.cbPole)}</td>
+                    <td>${dash(m.cbAT)}</td>
+                    <td>${dash(m.conductorType)}</td>
+                    <td>${dash(m.conductorSize)}</td>
+                    <td>${dash(m.racewayType)}</td>
+                    <td>${dash(m.racewaySize)}</td>
+                </tr>
+            `;
+
+            if (ls.savedAt) {
+                document.getElementById('savedAt').textContent =
+                    'บันทึกล่าสุด: ' + new Date(ls.savedAt).toLocaleString('th-TH');
+            }
+            document.getElementById('scheduleView').style.display = 'block';
+        };
+    </script>
+
+</body>
+</html>
